@@ -1,0 +1,37 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin:'application'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+applicationDefaultJvmArgs = ["-Xmx512M"]
+mainClassName = "com.andrewringler.slitscan.Main"
+
+group = 'com.andrewringler.processingexperiments'
+version = '0.1'
+
+repositories {
+    flatDir {
+        dirs 'lib', 'lib/p3', 'lib/p3-video'
+    }
+ 	mavenCentral()
+ 	maven {
+        url "http://maven.imagej.net/content/repositories/releases/"
+    }
+}
+
+dependencies {
+    compile ":core:@jar",
+            ":gluegen-rt:@jar",
+            ":jogl-all@jar",
+            ":gstreamer-java:@jar",
+            ":jna:@jar",
+            ":video:@jar",
+            'com.google.guava:guava:20.0',
+            'org.slf4j:slf4j-api:1.6.1',
+            'io.scif:scifio:0.32.0'
+            
+    runtime 'ch.qos.logback:logback-classic:1.0.9',
+            'io.scif:scifio:0.32.0',
+    			fileTree(dir: 'lib/p3', include: '**/*.jar')
+}

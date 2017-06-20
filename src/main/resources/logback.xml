@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+		<level>INFO</level>
+    </filter>
+    <target>System.out</target>
+    <encoder>
+      <pattern>%d %-5p %-15.15t %logger{1} - %m%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+  
+  <appender name="file" class="ch.qos.logback.core.FileAppender">
+	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+		<level>ERROR</level>
+    </filter>
+    <file>video-2-slit-scan.log</file>
+    <append>true</append>
+    <encoder>
+      <pattern>%d %-5p %-15.15t %logger{1} - %m%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+
+  <appender name="fileDebug" class="ch.qos.logback.core.FileAppender">
+	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+		<level>INFO</level>
+    </filter>
+    <file>video-2-slit-scan-debug.log</file>
+    <append>true</append>
+    <encoder>
+      <pattern>%d %-5p %-15.15t %logger{1} - %m%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+  
+  <root level="INFO">
+    <appender-ref ref="stdout"/>
+    <appender-ref ref="file"/>
+    <appender-ref ref="fileDebug"/>
+  </root>
+  
+</configuration>
