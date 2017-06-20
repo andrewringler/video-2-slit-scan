@@ -58,9 +58,7 @@ public class Main extends PApplet {
 			exit();
 		}
 		
-		if (video.available()) {
-			image(video, 0, 0, width, height);
-		}
+		image(video, 0, 0, width, height);
 	}
 	
 	public void movieEvent(Movie m) {
@@ -92,8 +90,8 @@ public class Main extends PApplet {
 				imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, video.height));
 				ImageWriteParam param = imageWriter.getDefaultWriteParam();
 				param.setDestinationOffset(new Point(outputXOffsetNext, 0));
-				outputXOffsetNext += slit.width;
 				imageWriter.replacePixels((BufferedImage) slit.getNative(), param);
+				outputXOffsetNext += slit.width;
 			}
 			
 		} catch (IOException e) {

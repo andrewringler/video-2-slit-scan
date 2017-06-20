@@ -7,12 +7,12 @@ targetCompatibility = '1.8'
 applicationDefaultJvmArgs = ["-Xmx512M"]
 mainClassName = "com.andrewringler.slitscan.Main"
 
-group = 'com.andrewringler.processingexperiments'
+group = 'com.andrewringler.slitscan'
 version = '0.1'
 
 repositories {
     flatDir {
-        dirs 'lib', 'lib/p3', 'lib/p3-video'
+        dirs 'lib', 'lib/p3', 'lib/p3-video', 'lib/controlP5'
     }
  	mavenCentral()
  	maven {
@@ -27,6 +27,7 @@ dependencies {
             ":gstreamer-java:@jar",
             ":jna:@jar",
             ":video:@jar",
+            ":controlP5:@jar",
             'com.google.guava:guava:20.0',
             'org.slf4j:slf4j-api:1.6.1',
             'io.scif:scifio:0.32.0'
