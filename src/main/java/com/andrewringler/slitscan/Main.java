@@ -19,6 +19,7 @@ import io.scif.media.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageWriterSpi;
 import processing.core.PApplet;
 import processing.core.PImage;
+import processing.opengl.PGraphics2D;
 import processing.video.Movie;
 
 public class Main extends PApplet {
@@ -26,12 +27,11 @@ public class Main extends PApplet {
 	
 	private Movie video;
 	private int totalVideoFrames = 0;
-	boolean framesCounted = false;
-	boolean blankImageCreated = false;
 	int outputXOffsetNext = 0;
 	
 	String videoFileName = "screengrab1.mov";
 	String outputFileName = "output.tif";
+	PImage slit;
 	
 	public Main() {
 		// register SCIFIO TIFF readers and writers for use with Java ImageIO
@@ -42,69 +42,66 @@ public class Main extends PApplet {
 	}
 	
 	public void settings() {
-		size(100, 100, "processing.opengl.PGraphics3D");
+		size((int) (1920 * 0.5), (int) (1080 * 0.5), PGraphics2D.class.getCanonicalName());
 	}
 	
 	public void setup() {
-		size(100, 100);
-		
 		video = new Movie(this, videoFileName);
+		
 		video.speed(1000); // something fast
 		video.noLoop();
 		video.play();
 	}
 	
 	public void draw() {
-		if (!framesCounted && video.time() >= video.duration()) {
-			framesCounted = true;
-			video.stop();
-			println(" counted video frames: " + totalVideoFrames);
-		}
-		
-		if (framesCounted && !blankImageCreated) {
-			StreamingImageTools.createBlankImage(scifio, outputFileName, totalVideoFrames, video.height);
-			blankImageCreated = true;
-			
-			// restart the video
-			video.jump(0);
-			video.play();
-		}
-		
-		if (blankImageCreated && outputXOffsetNext >= totalVideoFrames) {
+		if (outputXOffsetNext >= totalVideoFrames) {
 			exit();
+		}
+		
+		if (video.available()) {
+			image(video, 0, 0, width, height);
 		}
 	}
 	
 	public void movieEvent(Movie m) {
-		m.read();
-		if (!framesCounted) {
-			totalVideoFrames++;
+		m.read(); // read current frame
+		
+		if (slit == null) {
+			// estimate total frames
+			totalVideoFrames = (int) Math.floor(video.duration() * 60.0);
+			slit = createImage(1, video.height, RGB);
+			
+			// create large blank-ish image to hold our output
+			StreamingImageTools.createBlankImage(scifio, outputFileName, totalVideoFrames, video.height);
 		}
 		
-		// append slit to blank image
-		if (blankImageCreated) {
-			// grab slit from video image
-			PImage slit = createImage(1, video.height, RGB);
-			// grab a slit from the exact middle of the current video frame 
-			slit.copy(video, video.width / 2, 0, 1, video.height, 0, 0, slit.width, slit.height);
-			
-			// write current slit to disk
-			File outputFile = new File(outputFileName);
-			try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
-				ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
-				ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
-				try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
-					imageWriter.setOutput(imageOutputStream);
-					imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, video.height));
-					ImageWriteParam param = imageWriter.getDefaultWriteParam();
-					param.setDestinationOffset(new Point(outputXOffsetNext, 0));
-					outputXOffsetNext += slit.width;
-					imageWriter.replacePixels((BufferedImage) slit.getNative(), param);
-				}
-				
-			} catch (IOException e) {
-				throw new IllegalStateException(e.getMessage(), e);
+		if (outputXOffsetNext >= totalVideoFrames) {
+			exit();
+		}
+		
+		// grab a slit from the middle of the current video frame
+		slit.copy(video, video.width / 2, 0, 1, video.height, 0, 0, slit.width, slit.height);
+		
+		// write current slit to disk
+		File outputFile = new File(outputFileName);
+		try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
+			ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
+			ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
+			try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
+				imageWriter.setOutput(imageOutputStream);
+				imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, video.height));
+				ImageWriteParam param = imageWriter.getDefaultWriteParam();
+				param.setDestinationOffset(new Point(outputXOffsetNext, 0));
+				outputXOffsetNext += slit.width;
+				imageWriter.replacePixels((BufferedImage) slit.getNative(), param);
 			}
+			
+		} catch (IOException e) {
+			throw new IllegalStateException(e.getMessage(), e);
+		}
+		
+		if (outputXOffsetNext >= totalVideoFrames) {
+			exit();
 		}
 	}
 	
