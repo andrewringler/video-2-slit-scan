@@ -11,3 +11,5 @@ generated/
 data/
 bin/
 saved/
+*.tif
+*.tiff

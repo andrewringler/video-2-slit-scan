@@ -8,30 +8,24 @@ import io.scif.SCIFIO;
 import io.scif.Writer;
 import io.scif.io.Location;
 
+/*
+ * Adapted from SCIFIO tutorial
+ */
 public class StreamingImageTools {
 	public static boolean createBlankImage(SCIFIO scifio, String outPath, int width, int height) {
 		try {
-			// In this tutorial, we're going to make our .fake sample image
-			// "real". If you look at the FakeFormat source code, you'll notice that
-			// it doesn't have a functional Writer, so we'll have to translate
-			// to a different Format that can write our fake planes to disk.
-			
-			// 3-channel RGB
+			// 3-channel RGB, a synthetic image, specified entirely by this string
 			final String sampleImage = "testImg&lengths=3," + width + "," + height + ",5&axes=Channel,X,Y,Time&planarDims=3.fake";
-			
-			// We'll need a path to write to. By making it a ".png" we are locking in
-			// the final format of the file on disk.
-			//		final String outPath = "SCIFIOTutorial.png";
 			
 			// Clear the file if it already exists.
 			final Location l = new Location(scifio.getContext(), outPath);
 			if (l.exists())
 				l.delete();
 			
-			// We'll need a reader for the input image
+			// we use the reader to inspect the image we actually created
 			final Reader reader = scifio.initializer().initializeReader(sampleImage);
 			
-			// .. and a writer for the output path
+			// we will use the writer to fill the image with blank-ish data
 			final Writer writer = scifio.initializer().initializeWriter(sampleImage, outPath);
 			
 			// Note that these initialize methods are used for convenience.
