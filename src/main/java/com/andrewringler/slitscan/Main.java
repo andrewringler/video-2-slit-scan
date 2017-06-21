@@ -29,7 +29,8 @@ public class Main extends PApplet {
 	private int totalVideoFrames = 0;
 	int outputXOffsetNext = 0;
 	
-	String videoFileName = "screengrab1.mov";
+	//	String videoFileName = "screengrab1.mov";
+	File videoFileName = null;
 	String outputFileName = "output.tif";
 	PImage slit;
 	
@@ -46,28 +47,56 @@ public class Main extends PApplet {
 	}
 	
 	public void setup() {
-		video = new Movie(this, videoFileName);
-		
-		video.speed(1000); // something fast
-		video.noLoop();
-		video.play();
+		selectInput("Select a video to process:", "videoFileSelected");
+	}
+	
+	public void videoFileSelected(File selection) {
+		if (selection == null) {
+			println("Window was closed or the user hit cancel.");
+		} else {
+			videoFileName = selection;
+			println("User selected " + videoFileName.getAbsolutePath());
+			
+			video = new Movie(this, videoFileName.getAbsolutePath());
+			
+			if (video != null) {
+				video.speed(1000); // something fast
+				video.noLoop();
+				video.play();
+			} else {
+				println("Unable to load video file: " + videoFileName.getAbsolutePath());
+				exit();
+			}
+		}
 	}
 	
 	public void draw() {
+		if (videoFileName == null) {
+			return; // nothing to do yet
+		}
+		
 		if (outputXOffsetNext >= totalVideoFrames) {
 			exit();
 		}
 		
-		image(video, 0, 0, width, height);
+		if (video != null) {
+			image(video, 0, 0, width, height);
+		}
 	}
 	
 	public void movieEvent(Movie m) {
+		if (videoFileName == null) {
+			return; // nothing to do yet
+		}
+		
 		m.read(); // read current frame
 		
 		if (slit == null) {
 			// estimate total frames
 			totalVideoFrames = (int) Math.floor(video.duration() * 60.0);
 			slit = createImage(1, video.height, RGB);
+			
+			println("Video is " + video.duration() + " seconds long, estimating " + totalVideoFrames + " total frames");
 			
 			// create large blank-ish image to hold our output
 			StreamingImageTools.createBlankImage(scifio, outputFileName, totalVideoFrames, video.height);
@@ -105,6 +134,19 @@ public class Main extends PApplet {
 	
 	public void dispose() {
 		scifio.getContext().dispose();
+	}
+	
+	// need to override exit() method when using Processing from eclipse
+	// https://forum.processing.org/two/discussion/22292/solved-javaw-process-wont-close-after-the-exit-of-my-program-eclipse
+	public void exit() {
+		noLoop();
+		
+		// Perform any code you like but some libraries like minim 
+		//need to be stopped manually. If so do that here.
+		
+		// Now call the overridden method. Since the sketch is no longer looping
+		// it will call System.exit(0); for you
+		super.exit();
 	}
 	
 	public static void main(String args[]) {
