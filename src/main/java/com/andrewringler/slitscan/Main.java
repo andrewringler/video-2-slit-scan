@@ -112,7 +112,8 @@ public class Main extends PApplet {
 			if (video != null) {
 				video.volume(0);
 				
-				// 
+				// https://forum.processing.org/two/discussion/17628/can-i-pauze-a-movie-frame-by-frame
+				// https://forum.processing.org/two/discussion/comment/72263/#Comment_72263
 				// Pausing the video at the first frame. 
 				video.play();
 				video.jump(0);
