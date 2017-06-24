@@ -42,10 +42,13 @@ public class Main extends PApplet {
 	private int totalVideoFrames = 0;
 	int outputXOffsetNext = 0;
 	private final SCIFIO scifio;
+	float SLIT_LOCATION = 0.5f; // [0-1]
 	
 	// UI Controls
 	ControlP5 cp5;
 	private Textfield videoFileLabel;
+	int mouseClickedLocationX = -1;
+	private boolean draggingSlit;
 	
 	public Main() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
@@ -123,6 +126,38 @@ public class Main extends PApplet {
 	
 	public void draw() {
 		image(previewFrame, 0, 0, width, height);
+		
+		// draw slit location
+		noFill();
+		strokeWeight(1);
+		stroke(255);
+		patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x0300, 1);
+		stroke(0);
+		patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
+		
+		if (draggingSlit) {
+			stroke(255, 255, 0);
+			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x0300, 1);
+			stroke(0, 255, 0);
+			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
+		}
+	}
+	
+	public void mouseDragged() {
+		if (draggingSlit) {
+			SLIT_LOCATION = (float) mouseX / width;
+		}
+	}
+	
+	public void mousePressed() {
+		int slitLocationX = (int) (SLIT_LOCATION * width);
+		if (mouseX < slitLocationX + 5 && mouseX > slitLocationX - 5) {
+			draggingSlit = true;
+		}
+	}
+	
+	public void mouseReleased() {
+		draggingSlit = false;
 	}
 	
 	public void movieEvent(Movie m) {
@@ -137,7 +172,7 @@ public class Main extends PApplet {
 		
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
-			slit.copy(video, video.width / 2, 0, 1, video.height, 0, 0, slit.width, slit.height);
+			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, 1, video.height, 0, 0, slit.width, slit.height);
 			
 			if (outputXOffsetNext < totalVideoFrames) {
 				// write current slit to disk
@@ -180,6 +215,73 @@ public class Main extends PApplet {
 		println("dispose");
 		generatingSlitScanImage = false;
 		scifio.getContext().dispose();
+	}
+	
+	/*
+	 * based on Bresenham's algorithm from wikipedia
+	 * http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
+	 * https://processing.org/discourse/beta/num_1202486379.html
+	 * Some examples:
+	 * linePattern = 0x5555 will be a dotted line, alternating one drawn and one skipped pixel.
+	 * linePattern = 0x0F0F will be medium sized dashes.
+	 * linePattern = 0xFF00 will be large dashes.
+	 */
+	void patternLine(int xStart, int yStart, int xEnd, int yEnd, int linePattern, int lineScale) {
+		int temp, yStep, x, y;
+		int pattern = linePattern;
+		int carry;
+		int count = lineScale;
+		
+		boolean steep = (abs(yEnd - yStart) > abs(xEnd - xStart));
+		if (steep == true) {
+			temp = xStart;
+			xStart = yStart;
+			yStart = temp;
+			temp = xEnd;
+			xEnd = yEnd;
+			yEnd = temp;
+		}
+		if (xStart > xEnd) {
+			temp = xStart;
+			xStart = xEnd;
+			xEnd = temp;
+			temp = yStart;
+			yStart = yEnd;
+			yEnd = temp;
+		}
+		int deltaX = xEnd - xStart;
+		int deltaY = abs(yEnd - yStart);
+		int error = -(deltaX + 1) / 2;
+		
+		y = yStart;
+		if (yStart < yEnd) {
+			yStep = 1;
+		} else {
+			yStep = -1;
+		}
+		for (x = xStart; x <= xEnd; x++) {
+			if ((pattern & 1) == 1) {
+				if (steep == true) {
+					point(y, x);
+				} else {
+					point(x, y);
+				}
+				carry = 0x8000;
+			} else {
+				carry = 0;
+			}
+			count--;
+			if (count <= 0) {
+				pattern = (pattern >> 1) + carry;
+				count = lineScale;
+			}
+			
+			error += deltaY;
+			if (error >= 0) {
+				y += yStep;
+				error -= deltaX;
+			}
+		}
 	}
 	
 	// need to override exit() method when using Processing from eclipse
