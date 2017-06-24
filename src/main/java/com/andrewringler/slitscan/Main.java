@@ -27,18 +27,21 @@ import processing.opengl.PGraphics2D;
 import processing.video.Movie;
 
 public class Main extends PApplet {
-	private final SCIFIO scifio;
-	
+	// Video
 	private Movie video;
-	private int totalVideoFrames = 0;
-	int outputXOffsetNext = 0;
-	
-	boolean generatingSlitScanImage = false;
-	
-	//	String videoFileName = "screengrab1.mov";
 	File videoFileName = null;
 	String outputFileName = "output.tif";
+	PImage previewFrame;
+	int lastDrawUpdate = 0;
+	
+	// Slit generation
+	int SLIT_WIDTH = 1;
 	PImage slit;
+	boolean generatingSlitScanImage = false;
+	boolean initSlit = false;
+	private int totalVideoFrames = 0;
+	int outputXOffsetNext = 0;
+	private final SCIFIO scifio;
 	
 	// UI Controls
 	ControlP5 cp5;
@@ -60,6 +63,7 @@ public class Main extends PApplet {
 	
 	public void setup() {
 		background(0);
+		previewFrame = createImage(width, height, RGB);
 		
 		cp5 = new ControlP5(this);
 		cp5.addButton("selectVideoFile").setLabel("Select video file").setPosition(100, 100).setSize(100, 19).onClick(new CallbackListener() {
@@ -74,101 +78,106 @@ public class Main extends PApplet {
 		cp5.addButton("Generate slit-scan image").setPosition(100, 120).setSize(100, 19).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
-				generatingSlitScanImage = true;
-				
-				if (video != null) {
-					video.jump(0);
-					video.speed(1000); // something fast
-					video.play();
-				} else {
-					println("Unable to load video file: " + videoFileName.getAbsolutePath());
-					exit();
+				if (!generatingSlitScanImage) {
+					if (video != null) {
+						println("starting slit-scan image generation");
+						generatingSlitScanImage = true;
+						initSlit = true;
+						video.jump(0);
+						video.play();
+					} else {
+						println("no video loaded!");
+					}
 				}
 			}
 		});
 	}
 	
 	public void videoFileSelected(File selection) {
-		// NOT IN Processing thread!
-		
 		if (selection == null) {
 			println("Window was closed or the user hit cancel.");
 		} else {
 			videoFileName = selection;
-			println("User selected " + videoFileName.getAbsolutePath());
+			println("user selected " + videoFileName.getAbsolutePath());
 			videoFileLabel.setValue(videoFileName.getAbsolutePath());
-		}
-	}
-	
-	public void draw() {
-		if (video != null) {
-			image(video, 0, 0, width, height);
-		}
-		
-		if (videoFileName != null && (video == null || !videoFileName.getAbsolutePath().equals(video.filename))) {
-			// if no video, or new video
+			
+			println("setting up video " + videoFileName.getAbsolutePath());
 			video = new Movie(this, videoFileName.getAbsolutePath());
 			
 			if (video != null) {
 				video.volume(0);
-				
-				// https://forum.processing.org/two/discussion/17628/can-i-pauze-a-movie-frame-by-frame
-				// https://forum.processing.org/two/discussion/comment/72263/#Comment_72263
-				// Pausing the video at the first frame. 
 				video.play();
-				video.jump(0);
-				video.read();
 				video.pause();
+				
+				if (video.available()) {
+					video.read();
+					updatePreviewFrame();
+				}
 			} else {
 				println("Unable to load video file: " + videoFileName.getAbsolutePath());
 				exit();
 			}
+			
 		}
+	}
+	
+	public void draw() {
+		image(previewFrame, 0, 0, width, height);
 	}
 	
 	public void movieEvent(Movie m) {
-		m.read(); // read current frame
+		video.read(); // load current frame
+		
+		if (initSlit) {
+			outputXOffsetNext = 0;
+			slit = createImage(SLIT_WIDTH, video.height, RGB);
+			totalVideoFrames = (int) (video.duration() * 30.0);
+			initSlit = false;
+		}
 		
 		if (generatingSlitScanImage) {
-			if (slit == null) {
-				// estimate total frames
-				totalVideoFrames = (int) Math.floor(video.duration() * 60.0);
-				slit = createImage(1, video.height, RGB);
-				
-				println("Video is " + video.duration() + " seconds long, estimating " + totalVideoFrames + " total frames");
-				
-				// create large blank-ish image to hold our output
-				StreamingImageTools.createBlankImage(scifio, outputFileName, totalVideoFrames, video.height);
-			}
-			
-			if (outputXOffsetNext >= totalVideoFrames) {
-				generatingSlitScanImage = false;
-			}
-			
 			// grab a slit from the middle of the current video frame
 			slit.copy(video, video.width / 2, 0, 1, video.height, 0, 0, slit.width, slit.height);
 			
-			// write current slit to disk
-			File outputFile = new File(outputFileName);
-			try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
-				ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
-				ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
-				try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
-					imageWriter.setOutput(imageOutputStream);
-					imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, video.height));
-					ImageWriteParam param = imageWriter.getDefaultWriteParam();
-					param.setDestinationOffset(new Point(outputXOffsetNext, 0));
-					imageWriter.replacePixels((BufferedImage) slit.getNative(), param);
-					outputXOffsetNext += slit.width;
+			if (outputXOffsetNext < totalVideoFrames) {
+				// write current slit to disk
+				File outputFile = new File(outputFileName);
+				try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
+					ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
+					ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
+					try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
+						imageWriter.setOutput(imageOutputStream);
+						imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, video.height));
+						ImageWriteParam param = imageWriter.getDefaultWriteParam();
+						param.setDestinationOffset(new Point(outputXOffsetNext, 0));
+						imageWriter.replacePixels((BufferedImage) slit.getNative(), param);
+						outputXOffsetNext += slit.width;
+					}
+					
+				} catch (IOException e) {
+					throw new IllegalStateException(e.getMessage(), e);
 				}
+				println("processed frame: ", outputXOffsetNext, " / ", totalVideoFrames, " video @", video.time(), "/", video.duration());
 				
-			} catch (IOException e) {
-				throw new IllegalStateException(e.getMessage(), e);
+				if ((millis() - lastDrawUpdate) > 16) {
+					updatePreviewFrame();
+					lastDrawUpdate = millis();
+				}
+			} else {
+				println("done ", outputXOffsetNext, " / ", totalVideoFrames);
+				generatingSlitScanImage = false;
 			}
 		}
 	}
 	
+	private void updatePreviewFrame() {
+		PImage frame = createImage(width, height, RGB);
+		frame.copy(video, 0, 0, video.width, video.height, 0, 0, previewFrame.width, previewFrame.height);
+		previewFrame = frame;
+	}
+	
 	public void dispose() {
+		println("dispose");
 		generatingSlitScanImage = false;
 		scifio.getContext().dispose();
 	}
