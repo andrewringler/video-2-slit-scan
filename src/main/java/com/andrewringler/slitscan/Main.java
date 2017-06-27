@@ -1,19 +1,19 @@
 package com.andrewringler.slitscan;
 
-import java.awt.Point;
-import java.awt.Rectangle;
+import static com.andrewringler.slitscan.StreamingImageTools.createBlankImage;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
 import javax.imageio.spi.IIORegistry;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
 
+import controlP5.Button;
 import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
 import controlP5.ControlP5;
@@ -30,19 +30,23 @@ public class Main extends PApplet {
 	// Video
 	private Movie video;
 	File videoFileName = null;
-	String outputFileName = "output.tif";
+	String outputFileName;
 	PImage previewFrame;
 	int lastDrawUpdate = 0;
 	
 	// Slit generation
 	int SLIT_WIDTH = 1;
-	PImage slit;
 	boolean generatingSlitScanImage = false;
 	boolean initSlit = false;
-	private int totalVideoFrames = 0;
-	int outputXOffsetNext = 0;
-	private final SCIFIO scifio;
 	float SLIT_LOCATION = 0.5f; // [0-1]
+	
+	// file writing
+	private static final int MAX_SLITS_TO_BATCH = 500;
+	LinkedBlockingQueue<BufferedImage> slitQueue = new LinkedBlockingQueue<BufferedImage>();
+	private int totalVideoFrames = 0;
+	private final SCIFIO scifio;
+	ScheduledExecutorService fileWritingExecutor = Executors.newScheduledThreadPool(1);
+	private UpdateTiffOnDisk tiffUpdater;
 	
 	// UI Controls
 	ControlP5 cp5;
@@ -66,6 +70,7 @@ public class Main extends PApplet {
 	
 	public void setup() {
 		background(0);
+		outputFileName = year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan.tif";
 		previewFrame = createImage(width, height, RGB);
 		
 		cp5 = new ControlP5(this);
@@ -78,7 +83,7 @@ public class Main extends PApplet {
 		
 		videoFileLabel = cp5.addTextfield("videFileTextField").setLabel("Video File").setPosition(220, 100).setSize(300, 19).setAutoClear(false);
 		
-		cp5.addButton("Generate slit-scan image").setPosition(100, 120).setSize(100, 19).onClick(new CallbackListener() {
+		Button generateSlitButton = cp5.addButton("Generate slit-scan image").setPosition(100, 120).setSize(100, 19).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				if (!generatingSlitScanImage) {
@@ -87,6 +92,7 @@ public class Main extends PApplet {
 						generatingSlitScanImage = true;
 						initSlit = true;
 						video.jump(0);
+						video.speed(10);
 						video.play();
 					} else {
 						println("no video loaded!");
@@ -141,6 +147,18 @@ public class Main extends PApplet {
 			stroke(0, 255, 0);
 			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
 		}
+		
+		if (generatingSlitScanImage) {
+			// give disk-writting a chance to catch up
+			if (slitQueue.size() > MAX_SLITS_TO_BATCH) {
+				video.pause();
+			}
+			
+			// only re-enable the video once all slits have been flushed to disk
+			if (slitQueue.isEmpty()) {
+				video.play();
+			}
+		}
 	}
 	
 	public void mouseDragged() {
@@ -163,45 +181,32 @@ public class Main extends PApplet {
 	public void movieEvent(Movie m) {
 		video.read(); // load current frame
 		
+		if ((millis() - lastDrawUpdate) > 16) {
+			updatePreviewFrame();
+			lastDrawUpdate = millis();
+		}
+		
 		if (initSlit) {
-			outputXOffsetNext = 0;
-			slit = createImage(SLIT_WIDTH, video.height, RGB);
-			totalVideoFrames = (int) (video.duration() * 30.0);
 			initSlit = false;
+			
+			totalVideoFrames = (int) (video.duration() * 30.0);
+			
+			createBlankImage(scifio, outputFileName, SLIT_WIDTH * totalVideoFrames, video.height);
+			
+			// cancel any previous rendering
+			if (tiffUpdater != null) {
+				tiffUpdater.cancel();
+			}
+			tiffUpdater = new UpdateTiffOnDisk(slitQueue, totalVideoFrames, outputFileName, SLIT_WIDTH, video.height);
+			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2500, 2000, TimeUnit.MILLISECONDS);
+			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
 		
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
+			PImage slit = createImage(SLIT_WIDTH, video.height, RGB);
 			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, 1, video.height, 0, 0, slit.width, slit.height);
-			
-			if (outputXOffsetNext < totalVideoFrames) {
-				// write current slit to disk
-				File outputFile = new File(outputFileName);
-				try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
-					ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
-					ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
-					try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
-						imageWriter.setOutput(imageOutputStream);
-						imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, video.height));
-						ImageWriteParam param = imageWriter.getDefaultWriteParam();
-						param.setDestinationOffset(new Point(outputXOffsetNext, 0));
-						imageWriter.replacePixels((BufferedImage) slit.getNative(), param);
-						outputXOffsetNext += slit.width;
-					}
-					
-				} catch (IOException e) {
-					throw new IllegalStateException(e.getMessage(), e);
-				}
-				println("processed frame: ", outputXOffsetNext, " / ", totalVideoFrames, " video @", video.time(), "/", video.duration());
-				
-				if ((millis() - lastDrawUpdate) > 16) {
-					updatePreviewFrame();
-					lastDrawUpdate = millis();
-				}
-			} else {
-				println("done ", outputXOffsetNext, " / ", totalVideoFrames);
-				generatingSlitScanImage = false;
-			}
+			slitQueue.add((BufferedImage) slit.getNative());
 		}
 	}
 	
@@ -209,12 +214,6 @@ public class Main extends PApplet {
 		PImage frame = createImage(width, height, RGB);
 		frame.copy(video, 0, 0, video.width, video.height, 0, 0, previewFrame.width, previewFrame.height);
 		previewFrame = frame;
-	}
-	
-	public void dispose() {
-		println("dispose");
-		generatingSlitScanImage = false;
-		scifio.getContext().dispose();
 	}
 	
 	/*
@@ -284,24 +283,35 @@ public class Main extends PApplet {
 		}
 	}
 	
-	// need to override exit() method when using Processing from eclipse
-	// https://forum.processing.org/two/discussion/22292/solved-javaw-process-wont-close-after-the-exit-of-my-program-eclipse
-	public void exit() {
-		println("exit");
+	private void cleanup() {
 		generatingSlitScanImage = false;
 		scifio.getContext().dispose();
 		if (video != null) {
 			video.dispose();
 		}
-		noLoop();
-		
-		// Perform any code you like but some libraries like minim 
-		//need to be stopped manually. If so do that here.
-		
-		// Now call the overridden method. Since the sketch is no longer looping
-		// it will call System.exit(0); for you
-		super.exit();
+		fileWritingExecutor.shutdown();
 	}
+	
+	public void dispose() {
+		println("dispose");
+		cleanup();
+	}
+	
+	//	// need to override exit() method when using Processing from eclipse
+	//	// https://forum.processing.org/two/discussion/22292/solved-javaw-process-wont-close-after-the-exit-of-my-program-eclipse
+	//	public void exit() {
+	//		println("exit");
+	//		cleanup();
+	//		
+	//		noLoop();
+	//		
+	//		// Perform any code you like but some libraries like minim 
+	//		//need to be stopped manually. If so do that here.
+	//		
+	//		// Now call the overridden method. Since the sketch is no longer looping
+	//		// it will call System.exit(0); for you
+	//		super.exit();
+	//	}
 	
 	public static void main(String args[]) {
 		// https://processing.org/tutorials/eclipse/
