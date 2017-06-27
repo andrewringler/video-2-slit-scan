@@ -57,10 +57,10 @@ public class UpdateTiffOnDisk implements Runnable {
 					System.out.println("unable to write: " + e.getMessage());
 					throw new IllegalStateException(e.getMessage(), e);
 				}
-				System.out.println("processed frame: " + outputXOffsetNext + " / " + totalVideoFrames);
+				System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
 				
 			} else {
-				System.out.println("done " + outputXOffsetNext + " / " + totalVideoFrames);
+				System.out.println("Done: " + outputXOffsetNext + " / " + totalVideoFrames);
 				done = true;
 			}
 		}
