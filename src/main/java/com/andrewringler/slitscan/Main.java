@@ -2,7 +2,6 @@ package com.andrewringler.slitscan;
 
 import static com.andrewringler.slitscan.StreamingImageTools.createBlankImage;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +33,7 @@ public class Main extends PApplet {
 	int lastDrawUpdate = 0;
 	boolean loadingFirstFrame = false;
 	boolean doPause = false;
+	float videoSpeed = 1;
 	
 	// Slit generation
 	int SLIT_WIDTH = 1;
@@ -43,7 +43,7 @@ public class Main extends PApplet {
 	
 	// file writing
 	private static final int MAX_SLITS_TO_BATCH = 500;
-	LinkedBlockingQueue<BufferedImage> slitQueue = new LinkedBlockingQueue<BufferedImage>();
+	LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
 	private int totalVideoFrames = 0;
 	private final SCIFIO scifio;
 	ScheduledExecutorService fileWritingExecutor = Executors.newScheduledThreadPool(1);
@@ -92,8 +92,9 @@ public class Main extends PApplet {
 						generatingSlitScanImage = true;
 						initSlit = true;
 						
+						videoSpeed = 1;
 						video.jump(0);
-						video.speed(10);
+						video.speed(videoSpeed);
 						video.play();
 					} else {
 						println("no video loaded!");
@@ -144,21 +145,17 @@ public class Main extends PApplet {
 			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
 		}
 		
-		if (generatingSlitScanImage) {
-			// give disk writing a chance to catch up
-			if (slitQueue.size() > MAX_SLITS_TO_BATCH) {
-				println("slowing for write wait");
-				video.speed(1);
-			}
-			
-			// only re-enable the video once all slits have been flushed to disk
-			if (slitQueue.isEmpty()) {
-				println("resuming fast play");
-				video.speed(10);
-			}
-			
-			println("Q-Size: " + slitQueue.size());
-		}
+		//		if (generatingSlitScanImage) {
+		//			// give disk writing a chance to catch up
+		//			if (frameRate < 30) {
+		//				videoSpeed *= 0.95;
+		//				video.speed(videoSpeed);
+		//			} else if (frameRate > 40) {
+		//				videoSpeed *= 1.05;
+		//				video.speed(videoSpeed);
+		//			}
+		//			println("v: " + videoSpeed);
+		//		}
 		
 		if (doPause && video != null) {
 			video.pause();
@@ -207,7 +204,7 @@ public class Main extends PApplet {
 			if (tiffUpdater != null) {
 				tiffUpdater.cancel();
 			}
-			tiffUpdater = new UpdateTiffOnDisk(slitQueue, totalVideoFrames, outputFileName, SLIT_WIDTH, video.height);
+			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, totalVideoFrames, outputFileName, SLIT_WIDTH, video.height);
 			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
@@ -216,7 +213,7 @@ public class Main extends PApplet {
 			// grab a slit from the middle of the current video frame
 			PImage slit = createImage(SLIT_WIDTH, video.height, RGB);
 			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
-			slitQueue.add((BufferedImage) slit.getNative());
+			slitQueue.add(slit);
 			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
 	}

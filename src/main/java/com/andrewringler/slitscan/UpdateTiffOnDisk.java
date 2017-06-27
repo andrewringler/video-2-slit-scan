@@ -15,20 +15,28 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.core.PImage;
+
 public class UpdateTiffOnDisk implements Runnable {
-	private final LinkedBlockingQueue<BufferedImage> slitQueue;
+	private final LinkedBlockingQueue<PImage> slitQueue;
 	private final int totalVideoFrames;
+	private final int outputFileWidth;
 	private final String outputFileName;
 	private final int slitWidth;
 	private final int slitHeight;
+	private final PApplet p;
 	
 	private int outputXOffsetNext = 0;
 	private boolean done = false;
 	private ScheduledFuture<?> renderedSlitsFuture;
 	
-	public UpdateTiffOnDisk(LinkedBlockingQueue<BufferedImage> slitQueue, int totalVideoFrames, String outputFileName, int slitWidth, int slitHeight) {
+	public UpdateTiffOnDisk(PApplet p, LinkedBlockingQueue<PImage> slitQueue, int totalVideoFrames, String outputFileName, int slitWidth, int slitHeight) {
+		this.p = p;
 		this.slitQueue = slitQueue;
 		this.totalVideoFrames = totalVideoFrames;
+		this.outputFileWidth = totalVideoFrames * slitWidth;
 		this.outputFileName = outputFileName;
 		this.slitWidth = slitWidth;
 		this.slitHeight = slitHeight;
@@ -36,33 +44,39 @@ public class UpdateTiffOnDisk implements Runnable {
 	
 	@Override
 	public void run() {
-		BufferedImage slit;
+		if (done || slitQueue.isEmpty()) {
+			return;
+		}
 		
-		while (!done && (slit = slitQueue.poll()) != null) {
-			if (outputXOffsetNext < totalVideoFrames) {
-				// write current slit to disk
-				File outputFile = new File(outputFileName);
-				try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
-					ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
-					ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
-					try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
-						imageWriter.setOutput(imageOutputStream);
-						imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, 1, slitHeight));
-						ImageWriteParam param = imageWriter.getDefaultWriteParam();
-						param.setDestinationOffset(new Point(outputXOffsetNext, 0));
-						imageWriter.replacePixels((BufferedImage) slit, param);
-						outputXOffsetNext += slitWidth;
-					}
-				} catch (IOException e) {
-					System.out.println("unable to write: " + e.getMessage());
-					throw new IllegalStateException(e.getMessage(), e);
+		PImage slit;
+		
+		File outputFile = new File(outputFileName);
+		
+		int batchSize = slitQueue.size();
+		PImage slitsBatchImage = p.createImage(batchSize * slitWidth, slitHeight, PConstants.RGB);
+		
+		for (int i = 0; i < batchSize; i++) {
+			slit = slitQueue.poll();
+			slitsBatchImage.copy(slit, 0, 0, slit.width, slit.height, i, 0, slit.width, slit.height);
+		}
+		
+		if (outputXOffsetNext < (outputFileWidth - slitsBatchImage.width + 1)) {
+			try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
+				ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
+				ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
+				try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
+					imageWriter.setOutput(imageOutputStream);
+					imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, slitsBatchImage.width, slitsBatchImage.height));
+					ImageWriteParam param = imageWriter.getDefaultWriteParam();
+					param.setDestinationOffset(new Point(outputXOffsetNext, 0));
+					imageWriter.replacePixels((BufferedImage) slitsBatchImage.getNative(), param);
+					outputXOffsetNext += slitsBatchImage.width;
 				}
-				System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
-				
-			} else {
-				System.out.println("Done: " + outputXOffsetNext + " / " + totalVideoFrames);
-				done = true;
+			} catch (IOException e) {
+				System.out.println("unable to write: " + e.getMessage());
+				throw new IllegalStateException(e.getMessage(), e);
 			}
+			System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
 		}
 	}
 	
