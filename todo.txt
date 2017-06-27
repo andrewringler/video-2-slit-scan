@@ -1,0 +1,5 @@
+- proper frame count
+- frame count entry
+- starting frame #
+- ending frame #
+- slit location entry

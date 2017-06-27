@@ -33,7 +33,6 @@ public class Main extends PApplet {
 	int lastDrawUpdate = 0;
 	boolean loadingFirstFrame = false;
 	boolean doPause = false;
-	float videoSpeed = 1;
 	
 	// Slit generation
 	int SLIT_WIDTH = 1;
@@ -42,7 +41,6 @@ public class Main extends PApplet {
 	float SLIT_LOCATION = 0.5f; // [0-1]
 	
 	// file writing
-	private static final int MAX_SLITS_TO_BATCH = 500;
 	LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
 	private int totalVideoFrames = 0;
 	private final SCIFIO scifio;
@@ -92,9 +90,8 @@ public class Main extends PApplet {
 						generatingSlitScanImage = true;
 						initSlit = true;
 						
-						videoSpeed = 1;
 						video.jump(0);
-						video.speed(videoSpeed);
+						video.speed(1);
 						video.play();
 					} else {
 						println("no video loaded!");
@@ -144,18 +141,6 @@ public class Main extends PApplet {
 			stroke(0, 255, 0);
 			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
 		}
-		
-		//		if (generatingSlitScanImage) {
-		//			// give disk writing a chance to catch up
-		//			if (frameRate < 30) {
-		//				videoSpeed *= 0.95;
-		//				video.speed(videoSpeed);
-		//			} else if (frameRate > 40) {
-		//				videoSpeed *= 1.05;
-		//				video.speed(videoSpeed);
-		//			}
-		//			println("v: " + videoSpeed);
-		//		}
 		
 		if (doPause && video != null) {
 			video.pause();
