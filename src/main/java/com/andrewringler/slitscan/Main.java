@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
 
-import controlP5.Button;
 import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
 import controlP5.ControlP5;
@@ -33,6 +32,8 @@ public class Main extends PApplet {
 	String outputFileName;
 	PImage previewFrame;
 	int lastDrawUpdate = 0;
+	boolean loadingFirstFrame = false;
+	boolean doPause = false;
 	
 	// Slit generation
 	int SLIT_WIDTH = 1;
@@ -83,14 +84,14 @@ public class Main extends PApplet {
 		
 		videoFileLabel = cp5.addTextfield("videFileTextField").setLabel("Video File").setPosition(220, 100).setSize(300, 19).setAutoClear(false);
 		
-		Button generateSlitButton = cp5.addButton("Generate slit-scan image").setPosition(100, 120).setSize(100, 19).onClick(new CallbackListener() {
+		cp5.addButton("Generate slit-scan image").setPosition(100, 120).setSize(100, 19).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				if (!generatingSlitScanImage) {
 					if (video != null) {
-						println("starting slit-scan image generation");
 						generatingSlitScanImage = true;
 						initSlit = true;
+						
 						video.jump(0);
 						video.speed(10);
 						video.play();
@@ -114,14 +115,9 @@ public class Main extends PApplet {
 			video = new Movie(this, videoFileName.getAbsolutePath());
 			
 			if (video != null) {
+				loadingFirstFrame = true;
 				video.volume(0);
 				video.play();
-				video.pause();
-				
-				if (video.available()) {
-					video.read();
-					updatePreviewFrame();
-				}
 			} else {
 				println("Unable to load video file: " + videoFileName.getAbsolutePath());
 				exit();
@@ -149,15 +145,24 @@ public class Main extends PApplet {
 		}
 		
 		if (generatingSlitScanImage) {
-			// give disk-writting a chance to catch up
+			// give disk writing a chance to catch up
 			if (slitQueue.size() > MAX_SLITS_TO_BATCH) {
-				video.pause();
+				println("slowing for write wait");
+				video.speed(1);
 			}
 			
 			// only re-enable the video once all slits have been flushed to disk
 			if (slitQueue.isEmpty()) {
-				video.play();
+				println("resuming fast play");
+				video.speed(10);
 			}
+			
+			println("Q-Size: " + slitQueue.size());
+		}
+		
+		if (doPause && video != null) {
+			video.pause();
+			doPause = false;
 		}
 	}
 	
@@ -181,9 +186,14 @@ public class Main extends PApplet {
 	public void movieEvent(Movie m) {
 		video.read(); // load current frame
 		
-		if ((millis() - lastDrawUpdate) > 16) {
+		if (loadingFirstFrame || ((millis() - lastDrawUpdate) > 16)) {
 			updatePreviewFrame();
 			lastDrawUpdate = millis();
+		}
+		
+		if (loadingFirstFrame) {
+			loadingFirstFrame = false;
+			doPause = true;
 		}
 		
 		if (initSlit) {
@@ -198,15 +208,16 @@ public class Main extends PApplet {
 				tiffUpdater.cancel();
 			}
 			tiffUpdater = new UpdateTiffOnDisk(slitQueue, totalVideoFrames, outputFileName, SLIT_WIDTH, video.height);
-			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2500, 2000, TimeUnit.MILLISECONDS);
+			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
 		
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
 			PImage slit = createImage(SLIT_WIDTH, video.height, RGB);
-			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, 1, video.height, 0, 0, slit.width, slit.height);
+			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add((BufferedImage) slit.getNative());
+			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
 	}
 	
