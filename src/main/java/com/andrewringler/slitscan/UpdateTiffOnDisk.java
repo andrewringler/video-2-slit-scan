@@ -21,7 +21,6 @@ import processing.core.PImage;
 
 public class UpdateTiffOnDisk implements Runnable {
 	private final LinkedBlockingQueue<PImage> slitQueue;
-	private final int totalVideoFrames;
 	private final int outputFileWidth;
 	private final String outputFileName;
 	private final int slitWidth;
@@ -35,7 +34,6 @@ public class UpdateTiffOnDisk implements Runnable {
 	public UpdateTiffOnDisk(PApplet p, LinkedBlockingQueue<PImage> slitQueue, int totalVideoFrames, String outputFileName, int slitWidth, int slitHeight) {
 		this.p = p;
 		this.slitQueue = slitQueue;
-		this.totalVideoFrames = totalVideoFrames;
 		this.outputFileWidth = totalVideoFrames * slitWidth;
 		this.outputFileName = outputFileName;
 		this.slitWidth = slitWidth;
@@ -76,7 +74,7 @@ public class UpdateTiffOnDisk implements Runnable {
 				System.out.println("unable to write: " + e.getMessage());
 				throw new IllegalStateException(e.getMessage(), e);
 			}
-			System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
+			//			System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
 		}
 	}
 	

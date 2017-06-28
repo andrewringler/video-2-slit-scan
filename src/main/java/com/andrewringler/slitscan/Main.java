@@ -222,7 +222,7 @@ public class Main extends PApplet {
 			PImage slit = createImage(SLIT_WIDTH, video.height, RGB);
 			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
-			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
+			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
 	}
 	
