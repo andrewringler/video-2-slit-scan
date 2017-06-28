@@ -25,6 +25,7 @@ public class UpdateTiffOnDisk implements Runnable {
 	private final String outputFileName;
 	private final int slitWidth;
 	private final int slitHeight;
+	private final int totalVideoFrames;
 	private final PApplet p;
 	
 	private int outputXOffsetNext = 0;
@@ -34,6 +35,7 @@ public class UpdateTiffOnDisk implements Runnable {
 	public UpdateTiffOnDisk(PApplet p, LinkedBlockingQueue<PImage> slitQueue, int totalVideoFrames, String outputFileName, int slitWidth, int slitHeight) {
 		this.p = p;
 		this.slitQueue = slitQueue;
+		this.totalVideoFrames = totalVideoFrames;
 		this.outputFileWidth = totalVideoFrames * slitWidth;
 		this.outputFileName = outputFileName;
 		this.slitWidth = slitWidth;
@@ -91,5 +93,9 @@ public class UpdateTiffOnDisk implements Runnable {
 	
 	public void setFuture(ScheduledFuture<?> renderedSlitsFuture) {
 		this.renderedSlitsFuture = renderedSlitsFuture;
+	}
+	
+	public float getProgress() {
+		return (float) outputXOffsetNext / (float) totalVideoFrames;
 	}
 }
