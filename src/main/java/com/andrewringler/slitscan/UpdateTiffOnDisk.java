@@ -47,37 +47,49 @@ public class UpdateTiffOnDisk implements Runnable {
 		if (done || slitQueue.isEmpty()) {
 			return;
 		}
+		if (outputXOffsetNext + 1 > outputFileWidth) {
+			done = true;
+			return;
+		}
 		
 		PImage slit;
-		
 		File outputFile = new File(outputFileName);
-		
 		int batchSize = slitQueue.size();
-		PImage slitsBatchImage = p.createImage(batchSize * slitWidth, slitHeight, PConstants.RGB);
+		int batchImagePixelWidth = batchSize * slitWidth;
+		
+		/*
+		 * if the video has more frames than we have allocated for our output image
+		 * then the queue might have more frames in it, than we can actually write out to disk
+		 */
+		int pixelsRemaining = outputFileWidth - outputXOffsetNext;
+		if (batchImagePixelWidth > pixelsRemaining) {
+			batchSize = pixelsRemaining / slitWidth; // integer division
+			batchImagePixelWidth = batchSize * slitWidth;
+		}
+		
+		PImage slitsBatchImage = p.createImage(batchImagePixelWidth, slitHeight, PConstants.RGB);
 		
 		for (int i = 0; i < batchSize; i++) {
 			slit = slitQueue.poll();
 			slitsBatchImage.copy(slit, 0, 0, slit.width, slit.height, i, 0, slit.width, slit.height);
 		}
 		
-		if (outputXOffsetNext < (outputFileWidth - slitsBatchImage.width + 1)) {
-			try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
-				ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
-				ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
-				try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
-					imageWriter.setOutput(imageOutputStream);
-					imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, slitsBatchImage.width, slitsBatchImage.height));
-					ImageWriteParam param = imageWriter.getDefaultWriteParam();
-					param.setDestinationOffset(new Point(outputXOffsetNext, 0));
-					imageWriter.replacePixels((BufferedImage) slitsBatchImage.getNative(), param);
-					outputXOffsetNext += slitsBatchImage.width;
-				}
-			} catch (IOException e) {
-				System.out.println("unable to write: " + e.getMessage());
-				throw new IllegalStateException(e.getMessage(), e);
+		try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
+			ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
+			ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
+			try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
+				imageWriter.setOutput(imageOutputStream);
+				imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, slitsBatchImage.width, slitsBatchImage.height));
+				ImageWriteParam param = imageWriter.getDefaultWriteParam();
+				param.setDestinationOffset(new Point(outputXOffsetNext, 0));
+				imageWriter.replacePixels((BufferedImage) slitsBatchImage.getNative(), param);
+				outputXOffsetNext += slitsBatchImage.width;
 			}
-			//			System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
+		} catch (IOException e) {
+			System.out.println("unable to write: " + e.getMessage());
+			throw new IllegalStateException(e.getMessage(), e);
 		}
+		//			System.out.println("W: " + outputXOffsetNext + " / " + totalVideoFrames + " queue size: " + slitQueue.size());
 	}
 	
 	public boolean isDone() {
@@ -86,7 +98,7 @@ public class UpdateTiffOnDisk implements Runnable {
 	
 	public void cancel() {
 		if (renderedSlitsFuture != null) {
-			done = false;
+			done = true;
 			renderedSlitsFuture.cancel(false);
 		}
 	}
@@ -96,6 +108,9 @@ public class UpdateTiffOnDisk implements Runnable {
 	}
 	
 	public float getProgress() {
+		if (outputXOffsetNext >= totalVideoFrames) {
+			return 1f;
+		}
 		return (float) outputXOffsetNext / (float) totalVideoFrames;
 	}
 }
