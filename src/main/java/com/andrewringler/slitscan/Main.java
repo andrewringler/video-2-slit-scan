@@ -16,6 +16,7 @@ import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
 import controlP5.ControlP5;
 import controlP5.Group;
+import controlP5.RadioButton;
 import controlP5.Slider;
 import controlP5.Textfield;
 import io.scif.SCIFIO;
@@ -56,6 +57,7 @@ public class Main extends PApplet {
 	private Textfield videoFrameCountField;
 	private Textfield videoFPSField;
 	private Slider generationProgressSlider;
+	private RadioButton playSpeed;
 	int mouseClickedLocationX = -1;
 	private boolean draggingSlit;
 	
@@ -81,7 +83,7 @@ public class Main extends PApplet {
 		cp5 = new ControlP5(this);
 		
 		// Video load/setup
-		Group videoSettingsUI = cp5.addGroup("Video").setPosition(10, 20).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 220));
+		Group videoSettingsUI = cp5.addGroup("Video").setPosition(10, 20).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 240));
 		cp5.addButton("selectVideoFile").setLabel("Open video file").setPosition(10, 10).setSize(100, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
@@ -103,8 +105,11 @@ public class Main extends PApplet {
 		});
 		
 		// Slit scan setup/run
-		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setPosition(10, 190).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 220));
-		cp5.addButton("Generate slit-scan image").setPosition(10, 10).setSize(150, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
+		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setPosition(10, 190).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 240));
+		cp5.addTextlabel("playSpeedLabel").setText("Play Speed").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
+		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
+		playSpeed.activate(0);
+		cp5.addButton("Generate slit-scan image").setPosition(10, 100).setSize(150, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				if (!generatingSlitScanImage) {
@@ -112,8 +117,15 @@ public class Main extends PApplet {
 						generatingSlitScanImage = true;
 						initSlit = true;
 						
+						if (playSpeed != null) {
+							int playSpeedI = (int) playSpeed.getValue();
+							if (playSpeedI > 0 && playSpeedI < 10) {
+								video.speed(playSpeedI);
+							} else {
+								video.speed(1);
+							}
+						}
 						video.jump(0);
-						video.speed(1);
 						video.play();
 					} else {
 						println("no video loaded!");
@@ -121,7 +133,7 @@ public class Main extends PApplet {
 				}
 			}
 		});
-		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 40).setRange(0, 100).setGroup(slitGenerationUI);
+		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 130).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
 	}
 	
 	public void videoFileSelected(File selection) {
@@ -168,6 +180,13 @@ public class Main extends PApplet {
 		if (doPause && video != null) {
 			video.pause();
 			doPause = false;
+		}
+		
+		if (generatingSlitScanImage) {
+			generationProgressSlider.setValue(tiffUpdater.getProgress() * 100f);
+			if (tiffUpdater.isDone()) {
+				generatingSlitScanImage = false;
+			}
 		}
 	}
 	
@@ -227,8 +246,6 @@ public class Main extends PApplet {
 			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
-			
-			generationProgressSlider.setValue(tiffUpdater.getProgress() * 100f);
 		}
 	}
 	
