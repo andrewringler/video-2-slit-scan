@@ -15,6 +15,7 @@ import javax.imageio.spi.IIORegistry;
 import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
 import controlP5.ControlP5;
+import controlP5.Group;
 import controlP5.Textfield;
 import io.scif.SCIFIO;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
@@ -50,6 +51,9 @@ public class Main extends PApplet {
 	// UI Controls
 	ControlP5 cp5;
 	private Textfield videoFileLabel;
+	private Textfield videoFileDuration;
+	private Textfield videoFrameCountField;
+	private Textfield videoFPSField;
 	int mouseClickedLocationX = -1;
 	private boolean draggingSlit;
 	
@@ -73,16 +77,31 @@ public class Main extends PApplet {
 		previewFrame = createImage(width, height, RGB);
 		
 		cp5 = new ControlP5(this);
-		cp5.addButton("selectVideoFile").setLabel("Select video file").setPosition(100, 100).setSize(100, 19).onClick(new CallbackListener() {
+		
+		// Video load/setup
+		Group videoSettingsUI = cp5.addGroup("Video").setPosition(100, 100).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 220));
+		cp5.addButton("selectVideoFile").setLabel("Open video file").setPosition(10, 10).setSize(100, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				selectInput("Select a video to process:", "videoFileSelected");
 			}
 		});
+		videoFileLabel = cp5.addTextfield("videoFileTextField").setLabel("Video File Path").setPosition(10, 40).setSize(350, 20).setUserInteraction(false).setGroup(videoSettingsUI);
+		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("0").setInputFilter(ControlP5.FLOAT).setPosition(10, 80).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
+		videoFrameCountField = cp5.addTextfield("videoFileFrameCount").setLabel("Total Frames").setValue("0").setInputFilter(ControlP5.INTEGER).setPosition(120, 80).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
+		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("30").setPosition(80, 80).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI).onChange(new CallbackListener() {
+			@Override
+			public void controlEvent(CallbackEvent arg0) {
+				if (videoFrameCountField != null && videoFPSField != null && videoFileDuration != null) {
+					float fps = Float.valueOf(videoFPSField.getText());
+					float duration = Float.valueOf(videoFileDuration.getText());
+					videoFrameCountField.setValue(String.valueOf((int) (fps * duration)));
+				}
+			}
+		});
 		
-		videoFileLabel = cp5.addTextfield("videFileTextField").setLabel("Video File").setPosition(220, 100).setSize(300, 19).setAutoClear(false);
-		
-		cp5.addButton("Generate slit-scan image").setPosition(100, 120).setSize(100, 19).onClick(new CallbackListener() {
+		// Slit scan setup/run
+		cp5.addButton("Generate slit-scan image").setPosition(10, 20).setSize(100, 19).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				if (!generatingSlitScanImage) {
@@ -168,7 +187,7 @@ public class Main extends PApplet {
 	public void movieEvent(Movie m) {
 		video.read(); // load current frame
 		
-		if (loadingFirstFrame || ((millis() - lastDrawUpdate) > 16)) {
+		if (loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
 			updatePreviewFrame();
 			lastDrawUpdate = millis();
 		}
@@ -176,12 +195,16 @@ public class Main extends PApplet {
 		if (loadingFirstFrame) {
 			loadingFirstFrame = false;
 			doPause = true;
+			videoFileDuration.setValue(String.valueOf(video.duration()));
+			
+			float fps = Float.valueOf(videoFPSField.getText());
+			videoFrameCountField.setText(String.valueOf((int) (fps * video.duration())));
 		}
 		
 		if (initSlit) {
 			initSlit = false;
 			
-			totalVideoFrames = (int) (video.duration() * 30.0);
+			totalVideoFrames = Integer.valueOf(videoFrameCountField.getText());
 			
 			createBlankImage(scifio, outputFileName, SLIT_WIDTH * totalVideoFrames, video.height);
 			
