@@ -108,7 +108,7 @@ public class UpdateTiffOnDisk implements Runnable {
 	}
 	
 	public float getProgress() {
-		if (outputXOffsetNext >= totalVideoFrames) {
+		if (outputXOffsetNext >= totalVideoFrames || done) {
 			return 1f;
 		}
 		return (float) outputXOffsetNext / (float) totalVideoFrames;
