@@ -22,7 +22,7 @@ import processing.video.Movie;
 
 public class Video2SlitScan extends PApplet {
 	// Video
-	private Movie video;
+	Movie video;
 	File videoFileName = null;
 	File outputFile = null;
 	PImage previewFrame;
@@ -37,7 +37,6 @@ public class Video2SlitScan extends PApplet {
 	
 	// file writing
 	LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
-	private int totalVideoFrames = 0;
 	private final SCIFIO scifio;
 	ScheduledExecutorService fileWritingExecutor = Executors.newScheduledThreadPool(1);
 	private UpdateTiffOnDisk tiffUpdater;
@@ -85,10 +84,11 @@ public class Video2SlitScan extends PApplet {
 		} else {
 			if (selection.getAbsolutePath().endsWith(".tif")) {
 				outputFile = selection;
-				ui.outputFileSelected(outputFile.getAbsolutePath());
 			} else {
 				println("invalid file " + selection.getAbsolutePath());
+				// not updating outputFile
 			}
+			ui.outputFileSelected(outputFile.getAbsolutePath());
 		}
 	}
 	
@@ -193,15 +193,18 @@ public class Video2SlitScan extends PApplet {
 		if (initSlit) {
 			initSlit = false;
 			
-			totalVideoFrames = ui.getTotalVideoFrames();
+			int imageWidth = ui.getImageWidth();
 			
-			createBlankImage(scifio, outputFile.getAbsolutePath(), SLIT_WIDTH * totalVideoFrames, video.height);
+			// if output file does not exist, populate with blank image
+			if (!outputFile.exists()) {
+				createBlankImage(scifio, outputFile.getAbsolutePath(), imageWidth, video.height);
+			}
 			
 			// cancel any previous rendering
 			if (tiffUpdater != null) {
 				tiffUpdater.cancel();
 			}
-			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, totalVideoFrames, outputFile.getAbsolutePath(), SLIT_WIDTH, video.height);
+			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, ui.getStartingPixel(), outputFile.getAbsolutePath(), imageWidth, SLIT_WIDTH, video.height);
 			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
