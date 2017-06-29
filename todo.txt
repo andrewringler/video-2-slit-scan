@@ -1,5 +1,8 @@
 - proper frame count
-- frame count entry
+  button to count frames
+- cancel button  
+
+
 - starting frame #
 - ending frame #
 - slit location entry

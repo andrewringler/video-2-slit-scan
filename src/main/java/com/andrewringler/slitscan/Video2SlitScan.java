@@ -27,7 +27,7 @@ import processing.core.PImage;
 import processing.opengl.PGraphics2D;
 import processing.video.Movie;
 
-public class Main extends PApplet {
+public class Video2SlitScan extends PApplet {
 	// Video
 	private Movie video;
 	File videoFileName = null;
@@ -61,7 +61,7 @@ public class Main extends PApplet {
 	int mouseClickedLocationX = -1;
 	private boolean draggingSlit;
 	
-	public Main() {
+	public Video2SlitScan() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
 		
 		// register SCIFIO TIFF readers and writers for use with Java ImageIO
@@ -354,6 +354,6 @@ public class Main extends PApplet {
 	
 	public static void main(String args[]) {
 		// https://processing.org/tutorials/eclipse/
-		PApplet.main(new String[] { "--bgcolor=#000000", Main.class.getCanonicalName() });
+		PApplet.main(new String[] { "--bgcolor=#000000", Video2SlitScan.class.getCanonicalName() });
 	}
 }

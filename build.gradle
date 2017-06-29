@@ -1,3 +1,14 @@
+plugins {
+  id "edu.sc.seis.macAppBundle" version "2.1.6"
+}
+
+macAppBundle {
+    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+    bundleJRE = true
+    javaProperties.put("apple.laf.useScreenMenuBar", "false")
+    backgroundImage = "doc/macbackground.png"
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin:'application'
@@ -5,7 +16,7 @@ apply plugin:'application'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 applicationDefaultJvmArgs = ["-Xmx512M"]
-mainClassName = "com.andrewringler.slitscan.Main"
+mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
 
 group = 'com.andrewringler.slitscan'
 version = '0.1'
@@ -15,8 +26,12 @@ repositories {
         dirs 'lib', 'lib/p3', 'lib/p3-video', 'lib/controlP5'
     }
  	mavenCentral()
+  	jcenter()
  	maven {
         url "http://maven.imagej.net/content/repositories/releases/"
+    }
+ 	maven {
+        url "http://repo.boundlessgeo.com/main/"
     }
 }
 
@@ -34,5 +49,19 @@ dependencies {
             
     runtime 'ch.qos.logback:logback-classic:1.0.9',
             'io.scif:scifio:0.32.0',
-    			fileTree(dir: 'lib/p3', include: '**/*.jar')
+            fileTree(dir: 'lib/p3', include: '**/*.jar')
 }
+
+// the p3-video jars require us to preserve the specific folder structure
+// wrap copy in task for delayed evaluation
+task copySlitScanNatives {
+	outputs.upToDateWhen { false }
+	
+	doLast {
+		Copy myCopy = task(myCopy, type: Copy)
+		myCopy.from 'lib/p3-video'
+		myCopy.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java"
+		myCopy.execute()
+	}
+}
+createApp.finalizedBy copySlitScanNatives
