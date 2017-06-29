@@ -24,7 +24,7 @@ public class Video2SlitScan extends PApplet {
 	// Video
 	private Movie video;
 	File videoFileName = null;
-	String outputFileName;
+	File outputFile = null;
 	PImage previewFrame;
 	int lastDrawUpdate = 0;
 	boolean loadingFirstFrame = false;
@@ -59,14 +59,41 @@ public class Video2SlitScan extends PApplet {
 	
 	public void setup() {
 		background(0);
-		outputFileName = year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan.tif";
 		previewFrame = createImage(width, height, RGB);
 		
 		ui = new UserInterface(this);
+		
+		// on a Mac?
+		String home = System.getProperty("user.home");
+		if (new File(home + "/Desktop").exists()) {
+			outputFile = new File(home + "/Desktop/" + year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan.tif");
+			ui.outputFileSelected(outputFile.getAbsolutePath());
+		}
+	}
+	
+	public void outputFileSelector() {
+		if (outputFile != null) {
+			selectOutput("Choose output file *.tif", "outputFileSelected", outputFile);
+		} else {
+			selectOutput("Choose output file *.tif", "outputFileSelected");
+		}
+	}
+	
+	public void outputFileSelected(File selection) {
+		if (selection == null) {
+			println("Window was closed or the user hit cancel.");
+		} else {
+			if (selection.getAbsolutePath().endsWith(".tif")) {
+				outputFile = selection;
+				ui.outputFileSelected(outputFile.getAbsolutePath());
+			} else {
+				println("invalid file " + selection.getAbsolutePath());
+			}
+		}
 	}
 	
 	public void videoFileSelector() {
-		selectInput("Select a video to process:", "videoFileSelected");
+		selectInput("Select a video to process", "videoFileSelected");
 	}
 	
 	public void videoFileSelected(File selection) {
@@ -88,13 +115,12 @@ public class Video2SlitScan extends PApplet {
 				println("Unable to load video file: " + videoFileName.getAbsolutePath());
 				exit();
 			}
-			
 		}
 	}
 	
 	public void generateSlitScan() {
 		if (!generatingSlitScanImage) {
-			if (video != null) {
+			if (video != null && outputFile != null) {
 				generatingSlitScanImage = true;
 				initSlit = true;
 				
@@ -169,13 +195,13 @@ public class Video2SlitScan extends PApplet {
 			
 			totalVideoFrames = ui.getTotalVideoFrames();
 			
-			createBlankImage(scifio, outputFileName, SLIT_WIDTH * totalVideoFrames, video.height);
+			createBlankImage(scifio, outputFile.getAbsolutePath(), SLIT_WIDTH * totalVideoFrames, video.height);
 			
 			// cancel any previous rendering
 			if (tiffUpdater != null) {
 				tiffUpdater.cancel();
 			}
-			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, totalVideoFrames, outputFileName, SLIT_WIDTH, video.height);
+			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, totalVideoFrames, outputFile.getAbsolutePath(), SLIT_WIDTH, video.height);
 			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
