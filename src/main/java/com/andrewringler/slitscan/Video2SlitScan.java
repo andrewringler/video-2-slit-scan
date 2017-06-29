@@ -12,13 +12,6 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
 
-import controlP5.CallbackEvent;
-import controlP5.CallbackListener;
-import controlP5.ControlP5;
-import controlP5.Group;
-import controlP5.RadioButton;
-import controlP5.Slider;
-import controlP5.Textfield;
 import io.scif.SCIFIO;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageWriterSpi;
@@ -41,7 +34,6 @@ public class Video2SlitScan extends PApplet {
 	int SLIT_WIDTH = 1;
 	boolean generatingSlitScanImage = false;
 	boolean initSlit = false;
-	float SLIT_LOCATION = 0.5f; // [0-1]
 	
 	// file writing
 	LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
@@ -49,17 +41,7 @@ public class Video2SlitScan extends PApplet {
 	private final SCIFIO scifio;
 	ScheduledExecutorService fileWritingExecutor = Executors.newScheduledThreadPool(1);
 	private UpdateTiffOnDisk tiffUpdater;
-	
-	// UI Controls
-	ControlP5 cp5;
-	private Textfield videoFileLabel;
-	private Textfield videoFileDuration;
-	private Textfield videoFrameCountField;
-	private Textfield videoFPSField;
-	private Slider generationProgressSlider;
-	private RadioButton playSpeed;
-	int mouseClickedLocationX = -1;
-	private boolean draggingSlit;
+	private UserInterface ui;
 	
 	public Video2SlitScan() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
@@ -80,60 +62,11 @@ public class Video2SlitScan extends PApplet {
 		outputFileName = year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan.tif";
 		previewFrame = createImage(width, height, RGB);
 		
-		cp5 = new ControlP5(this);
-		
-		// Video load/setup
-		Group videoSettingsUI = cp5.addGroup("Video").setPosition(10, 20).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 240));
-		cp5.addButton("selectVideoFile").setLabel("Open video file").setPosition(10, 10).setSize(100, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
-			@Override
-			public void controlEvent(CallbackEvent arg0) {
-				selectInput("Select a video to process:", "videoFileSelected");
-			}
-		});
-		videoFileLabel = cp5.addTextfield("videoFileTextField").setLabel("Video File Path").setPosition(10, 40).setSize(350, 20).setUserInteraction(false).setGroup(videoSettingsUI);
-		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("0").setInputFilter(ControlP5.FLOAT).setPosition(10, 80).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
-		videoFrameCountField = cp5.addTextfield("videoFileFrameCount").setLabel("Total Frames").setValue("0").setInputFilter(ControlP5.INTEGER).setPosition(120, 80).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
-		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("30").setPosition(80, 80).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI).onChange(new CallbackListener() {
-			@Override
-			public void controlEvent(CallbackEvent arg0) {
-				if (videoFrameCountField != null && videoFPSField != null && videoFileDuration != null) {
-					float fps = Float.valueOf(videoFPSField.getText());
-					float duration = Float.valueOf(videoFileDuration.getText());
-					videoFrameCountField.setValue(String.valueOf((int) (fps * duration)));
-				}
-			}
-		});
-		
-		// Slit scan setup/run
-		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setPosition(10, 190).setBackgroundHeight(150).setWidth(400).setBackgroundColor(color(30, 30, 30, 240));
-		cp5.addTextlabel("playSpeedLabel").setText("Play Speed").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
-		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
-		playSpeed.activate(0);
-		cp5.addButton("Generate slit-scan image").setPosition(10, 100).setSize(150, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
-			@Override
-			public void controlEvent(CallbackEvent arg0) {
-				if (!generatingSlitScanImage) {
-					if (video != null) {
-						generatingSlitScanImage = true;
-						initSlit = true;
-						
-						if (playSpeed != null) {
-							int playSpeedI = (int) playSpeed.getValue();
-							if (playSpeedI > 0 && playSpeedI < 10) {
-								video.speed(playSpeedI);
-							} else {
-								video.speed(1);
-							}
-						}
-						video.jump(0);
-						video.play();
-					} else {
-						println("no video loaded!");
-					}
-				}
-			}
-		});
-		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 130).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
+		ui = new UserInterface(this);
+	}
+	
+	public void videoFileSelector() {
+		selectInput("Select a video to process:", "videoFileSelected");
 	}
 	
 	public void videoFileSelected(File selection) {
@@ -142,7 +75,7 @@ public class Video2SlitScan extends PApplet {
 		} else {
 			videoFileName = selection;
 			println("user selected " + videoFileName.getAbsolutePath());
-			videoFileLabel.setValue(videoFileName.getAbsolutePath());
+			ui.videoFileSelected(videoFileName.getAbsolutePath());
 			
 			println("setting up video " + videoFileName.getAbsolutePath());
 			video = new Movie(this, videoFileName.getAbsolutePath());
@@ -159,6 +92,21 @@ public class Video2SlitScan extends PApplet {
 		}
 	}
 	
+	public void generateSlitScan() {
+		if (!generatingSlitScanImage) {
+			if (video != null) {
+				generatingSlitScanImage = true;
+				initSlit = true;
+				
+				video.speed(ui.getPlaySpeed());
+				video.jump(0);
+				video.play();
+			} else {
+				println("no video loaded!");
+			}
+		}
+	}
+	
 	public void draw() {
 		image(previewFrame, 0, 0, width, height);
 		
@@ -166,15 +114,15 @@ public class Video2SlitScan extends PApplet {
 		noFill();
 		strokeWeight(1);
 		stroke(255);
-		patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x0300, 1);
+		patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x0300, 1);
 		stroke(0);
-		patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
+		patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x3000, 1);
 		
-		if (draggingSlit) {
+		if (ui.draggingSlit) {
 			stroke(255, 255, 0);
-			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x0300, 1);
+			patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x0300, 1);
 			stroke(0, 255, 0);
-			patternLine((int) (SLIT_LOCATION * width), 0, (int) (SLIT_LOCATION * width), height, 0x3000, 1);
+			patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x3000, 1);
 		}
 		
 		if (doPause && video != null) {
@@ -183,7 +131,7 @@ public class Video2SlitScan extends PApplet {
 		}
 		
 		if (generatingSlitScanImage) {
-			generationProgressSlider.setValue(tiffUpdater.getProgress() * 100f);
+			ui.updateProgress(tiffUpdater.getProgress() * 100f);
 			if (tiffUpdater.isDone()) {
 				generatingSlitScanImage = false;
 			}
@@ -191,20 +139,15 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void mouseDragged() {
-		if (draggingSlit) {
-			SLIT_LOCATION = (float) mouseX / width;
-		}
+		ui.mouseDragged();
 	}
 	
 	public void mousePressed() {
-		int slitLocationX = (int) (SLIT_LOCATION * width);
-		if (mouseX < slitLocationX + 5 && mouseX > slitLocationX - 5) {
-			draggingSlit = true;
-		}
+		ui.mousePressed();
 	}
 	
 	public void mouseReleased() {
-		draggingSlit = false;
+		ui.mouseReleased();
 	}
 	
 	public void movieEvent(Movie m) {
@@ -218,16 +161,13 @@ public class Video2SlitScan extends PApplet {
 		if (loadingFirstFrame) {
 			loadingFirstFrame = false;
 			doPause = true;
-			videoFileDuration.setValue(String.valueOf(video.duration()));
-			
-			float fps = Float.valueOf(videoFPSField.getText());
-			videoFrameCountField.setText(String.valueOf((int) (fps * video.duration())));
+			ui.setVideoDuration(video.duration());
 		}
 		
 		if (initSlit) {
 			initSlit = false;
 			
-			totalVideoFrames = Integer.valueOf(videoFrameCountField.getText());
+			totalVideoFrames = ui.getTotalVideoFrames();
 			
 			createBlankImage(scifio, outputFileName, SLIT_WIDTH * totalVideoFrames, video.height);
 			
@@ -243,7 +183,7 @@ public class Video2SlitScan extends PApplet {
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
 			PImage slit = createImage(SLIT_WIDTH, video.height, RGB);
-			slit.copy(video, (int) round(video.width * SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
+			slit.copy(video, (int) round(video.width * ui.SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
