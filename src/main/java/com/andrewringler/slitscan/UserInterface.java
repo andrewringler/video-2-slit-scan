@@ -2,11 +2,13 @@ package com.andrewringler.slitscan;
 
 import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
+import controlP5.ControlFont;
 import controlP5.ControlP5;
 import controlP5.Group;
 import controlP5.RadioButton;
 import controlP5.Slider;
 import controlP5.Textfield;
+import processing.core.PFont;
 
 public class UserInterface {
 	private final ControlP5 cp5;
@@ -26,18 +28,22 @@ public class UserInterface {
 		this.p = p;
 		cp5 = new ControlP5(p);
 		
+		PFont pfont = p.createFont("RobotoMono-Medium", 11, true); // use true/false for smooth/no-smooth
+		ControlFont font = new ControlFont(pfont, 11);
+		cp5.setFont(font);
+		
 		// Video load/setup
-		Group videoSettingsUI = cp5.addGroup("Video").setPosition(10, 20).setBackgroundHeight(150).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240));
-		cp5.addButton("selectVideoFile").setLabel("Open video file").setPosition(10, 10).setSize(100, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
+		Group videoSettingsUI = cp5.addGroup("Video").setPosition(10, 30).setBackgroundHeight(165).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
+		cp5.addButton("selectVideoFile").setLabel("Open video file").setPosition(10, 10).setSize(120, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				p.videoFileSelector();
 			}
 		});
 		videoFileLabel = cp5.addTextfield("videoFileTextField").setLabel("Video File Path").setPosition(10, 40).setSize(350, 20).setGroup(videoSettingsUI);
-		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("0").setInputFilter(ControlP5.FLOAT).setPosition(10, 80).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
-		videoFrameCountField = cp5.addTextfield("videoFileFrameCount").setLabel("Total Frames").setValue("0").setInputFilter(ControlP5.INTEGER).setPosition(120, 80).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
-		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("30").setPosition(80, 80).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI);
+		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("0").setInputFilter(ControlP5.FLOAT).setPosition(10, 95).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
+		videoFrameCountField = cp5.addTextfield("videoFileFrameCount").setLabel("Total Frames").setValue("0").setInputFilter(ControlP5.INTEGER).setPosition(160, 95).setSize(60, 20).setUserInteraction(false).setGroup(videoSettingsUI);
+		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("30").setPosition(100, 95).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI);
 		videoFPSField.onChange(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
@@ -48,12 +54,12 @@ public class UserInterface {
 		});
 		
 		// Slit scan setup/run
-		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setPosition(10, 190).setBackgroundHeight(200).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240));
+		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setPosition(10, 230).setBackgroundHeight(200).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
 		cp5.addTextlabel("playSpeedLabel").setText("Play Speed").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
 		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
 		playSpeed.activate(0);
 		
-		cp5.addButton("selectOutputFile").setLabel("Set Output File (*.tif)").setPosition(10, 40).setSize(100, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
+		cp5.addButton("selectOutputFile").setLabel("Set Output File (*.tif)").setPosition(10, 40).setSize(180, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				p.outputFileSelector();
@@ -61,13 +67,13 @@ public class UserInterface {
 		});
 		outputFileLabel = cp5.addTextfield("outputFileLabel").setLabel("Output File Path").setPosition(10, 70).setSize(350, 20).setGroup(slitGenerationUI);
 		
-		cp5.addButton("Generate slit-scan image").setPosition(10, 150).setSize(150, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
+		cp5.addButton("Generate slit-scan image").setPosition(10, 150).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				p.generateSlitScan();
 			}
 		});
-		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 180).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
+		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 180).setSize(300, 15).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
 	}
 	
 	public float getPlaySpeed() {
