@@ -2,7 +2,4 @@
   button to count frames
 - cancel button  
 
-
-- starting frame #
-- ending frame #
 - slit location entry
