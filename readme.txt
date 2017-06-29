@@ -1,0 +1,3 @@
+Build Application:
+
+gradle createDmg
