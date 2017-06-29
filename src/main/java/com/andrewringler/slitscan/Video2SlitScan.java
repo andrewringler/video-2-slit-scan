@@ -31,7 +31,6 @@ public class Video2SlitScan extends PApplet {
 	boolean doPause = false;
 	
 	// Slit generation
-	int SLIT_WIDTH = 1;
 	boolean generatingSlitScanImage = false;
 	boolean initSlit = false;
 	
@@ -204,15 +203,15 @@ public class Video2SlitScan extends PApplet {
 			if (tiffUpdater != null) {
 				tiffUpdater.cancel();
 			}
-			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, ui.getStartingPixel(), outputFile.getAbsolutePath(), imageWidth, SLIT_WIDTH, video.height);
+			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, ui.getStartingPixel(), outputFile.getAbsolutePath(), imageWidth, ui.getSlitWidth(), video.height);
 			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
 		
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
-			PImage slit = createImage(SLIT_WIDTH, video.height, RGB);
-			slit.copy(video, (int) round(video.width * ui.SLIT_LOCATION), 0, SLIT_WIDTH, video.height, 0, 0, slit.width, slit.height);
+			PImage slit = createImage(tiffUpdater.getSlitWidth(), video.height, RGB);
+			slit.copy(video, (int) round(video.width * ui.SLIT_LOCATION), 0, slit.width, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}

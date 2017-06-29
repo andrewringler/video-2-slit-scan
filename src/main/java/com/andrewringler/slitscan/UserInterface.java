@@ -25,6 +25,7 @@ public class UserInterface {
 	private final Textfield startPixelField;
 	private final Textfield imageWidthField;
 	private final Textfield imageHeightField;
+	private final Textfield slitWidthField;
 	
 	public boolean draggingSlit = false;
 	public float SLIT_LOCATION = 0.5f; // [0-1]
@@ -86,16 +87,36 @@ public class UserInterface {
 			public void controlEvent(CallbackEvent theEvent) {
 				Integer startingPixel = Integer.valueOf(startPixelField.getText());
 				Integer imageWidth = Integer.valueOf(imageWidthField.getText());
-				if (startingPixel + p.SLIT_WIDTH >= imageWidth) {
-					startPixelField.setText(String.valueOf(imageWidth - p.SLIT_WIDTH));
+				Integer slitWidth = Integer.valueOf(slitWidthField.getText());
+				
+				if (startingPixel + slitWidth >= imageWidth) {
+					startPixelField.setText(String.valueOf(imageWidth - slitWidth));
 				}
 				if (startingPixel < 0) {
 					startPixelField.setText("0");
 				}
 			}
 		});
-		imageWidthField = cp5.addTextfield("imageWidthField").setLabel("Width").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(true).setPosition(100, 120).setSize(60, 20).setGroup(slitGenerationUI);
-		imageHeightField = cp5.addTextfield("imageHeightField").setLabel("Height").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(false).setPosition(170, 120).setSize(60, 20).setGroup(slitGenerationUI);
+		
+		slitWidthField = cp5.addTextfield("slitWidthField").setLabel("Slit Width").setText("1").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setPosition(100, 120).setSize(40, 20).setGroup(slitGenerationUI);
+		slitWidthField.onChange(new CallbackListener() {
+			@Override
+			public void controlEvent(CallbackEvent theEvent) {
+				Integer slitWidth = Integer.valueOf(slitWidthField.getText());
+				if (slitWidth <= 0) {
+					slitWidth = 1;
+					slitWidthField.setText(String.valueOf(slitWidth));
+				}
+				
+				Integer frameCount = Integer.valueOf(videoFrameCountField.getText());
+				int newWidth = slitWidth * frameCount;
+				
+				imageWidthField.setText(String.valueOf(newWidth));
+			}
+		});
+		
+		imageWidthField = cp5.addTextfield("imageWidthField").setLabel("Width").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(true).setPosition(170, 120).setSize(60, 20).setGroup(slitGenerationUI);
+		imageHeightField = cp5.addTextfield("imageHeightField").setLabel("Height").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(false).setPosition(240, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		
 		cp5.addButton("Generate slit-scan image").setPosition(10, 200).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
@@ -158,10 +179,12 @@ public class UserInterface {
 	private void videoFrameCountUpdated() {
 		Integer frameCount = Integer.valueOf(videoFrameCountField.getText());
 		Integer startingPixel = Integer.valueOf(startPixelField.getText());
-		if (startingPixel + p.SLIT_WIDTH >= frameCount) {
-			startPixelField.setText(String.valueOf(frameCount - p.SLIT_WIDTH));
+		Integer slitWidth = Integer.valueOf(slitWidthField.getText());
+		
+		if (startingPixel + slitWidth >= frameCount) {
+			startPixelField.setText(String.valueOf(frameCount - slitWidth));
 		}
-		imageWidthField.setText(String.valueOf(frameCount * p.SLIT_WIDTH));
+		imageWidthField.setText(String.valueOf(frameCount * slitWidth));
 		imageHeightField.setText(String.valueOf(p.video.height));
 	}
 	
@@ -171,5 +194,9 @@ public class UserInterface {
 	
 	public Integer getImageWidth() {
 		return Integer.valueOf(imageWidthField.getText());
+	}
+	
+	public int getSlitWidth() {
+		return Integer.valueOf(slitWidthField.getText());
 	}
 }

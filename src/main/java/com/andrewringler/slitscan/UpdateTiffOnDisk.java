@@ -70,7 +70,7 @@ public class UpdateTiffOnDisk implements Runnable {
 		
 		for (int i = 0; i < batchSize; i++) {
 			slit = slitQueue.poll();
-			slitsBatchImage.copy(slit, 0, 0, slit.width, slit.height, i, 0, slit.width, slit.height);
+			slitsBatchImage.copy(slit, 0, 0, slit.width, slit.height, i * slitWidth, 0, slit.width, slit.height);
 		}
 		
 		try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
@@ -111,5 +111,9 @@ public class UpdateTiffOnDisk implements Runnable {
 			return 1f;
 		}
 		return (float) outputXOffsetNext / (float) outputFileWidth;
+	}
+	
+	public int getSlitWidth() {
+		return slitWidth;
 	}
 }
