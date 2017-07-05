@@ -81,6 +81,7 @@ public class UpdateTiffOnDisk implements Runnable {
 				imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, slitsBatchImage.width, slitsBatchImage.height));
 				ImageWriteParam param = imageWriter.getDefaultWriteParam();
 				param.setDestinationOffset(new Point(outputXOffsetNext, 0));
+				//				System.out.println("writing: [" + slitsBatchImage.width + "x" + slitsBatchImage.height + "] to (" + outputXOffsetNext + ",0)");
 				imageWriter.replacePixels((BufferedImage) slitsBatchImage.getNative(), param);
 				outputXOffsetNext += slitsBatchImage.width;
 			}
