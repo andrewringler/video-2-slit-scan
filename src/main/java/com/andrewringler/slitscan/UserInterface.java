@@ -2,6 +2,8 @@ package com.andrewringler.slitscan;
 
 import java.io.File;
 
+import controlP5.Button;
+import controlP5.CColor;
 import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
 import controlP5.ControlFont;
@@ -26,6 +28,8 @@ public class UserInterface {
 	private final Textfield imageWidthField;
 	private final Textfield imageHeightField;
 	private final Textfield slitWidthField;
+	private final Button selectVideoFile;
+	private final Button generateSlitScanImageButton;
 	
 	public boolean draggingSlit = false;
 	public float SLIT_LOCATION = 0.5f; // [0-1]
@@ -40,7 +44,7 @@ public class UserInterface {
 		
 		// Video load/setup
 		Group videoSettingsUI = cp5.addGroup("Video").setMoveable(true).setPosition(10, 30).setBackgroundHeight(165).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
-		cp5.addButton("selectVideoFile").setLabel("Open video file").setPosition(10, 10).setSize(120, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
+		selectVideoFile = cp5.addButton("selectVideoFile").setLabel("Open video file").setColorBackground(p.color(255, 255, 0)).setColorLabel(p.color(0)).setPosition(10, 10).setSize(120, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				p.videoFileSelector();
@@ -118,7 +122,7 @@ public class UserInterface {
 		imageWidthField = cp5.addTextfield("imageWidthField").setLabel("Width").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(true).setPosition(170, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		imageHeightField = cp5.addTextfield("imageHeightField").setLabel("Height").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(false).setPosition(240, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		
-		cp5.addButton("Generate slit-scan image").setPosition(10, 200).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
+		generateSlitScanImageButton = cp5.addButton("generateSlitScanImageButton").setLabel("Generate slit-scan image").setPosition(10, 200).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				p.generateSlitScan();
@@ -170,6 +174,8 @@ public class UserInterface {
 	
 	public void videoFileSelected(String videoFilePath) {
 		videoFileLabel.setValue(videoFilePath);
+		selectVideoFile.setColor(new CColor()); // restore default
+		generateSlitScanImageButton.setColorBackground(p.color(255, 255, 0)).setColorLabel(p.color(0));
 	}
 	
 	public void outputFileSelected(String outputFile) {
