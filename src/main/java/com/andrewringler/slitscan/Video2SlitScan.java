@@ -29,6 +29,7 @@ public class Video2SlitScan extends PApplet {
 	int lastDrawUpdate = 0;
 	boolean loadingFirstFrame = false;
 	boolean doPause = false;
+	private float previewFrameTimecode = 0;
 	
 	// Slit generation
 	boolean generatingSlitScanImage = false;
@@ -175,8 +176,17 @@ public class Video2SlitScan extends PApplet {
 		
 		if (generatingSlitScanImage) {
 			ui.updateProgress(tiffUpdater.getProgress() * 100f);
+			ui.updatePlayhead(previewFrameTimecode);
 			if (tiffUpdater.isDone()) {
 				generatingSlitScanImage = false;
+			}
+		} else if (ui.scrubbing() && video != null && previewFrame != null) {
+			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > 0.1) {
+				video.jump(ui.getVideoPlayhead());
+				video.play();
+			} else {
+				ui.doneScrubbing();
+				video.pause();
 			}
 		}
 	}
@@ -196,9 +206,10 @@ public class Video2SlitScan extends PApplet {
 	public void movieEvent(Movie m) {
 		video.read(); // load current frame
 		
-		if (loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
+		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
 			float scalingFactor = video.width > 640 ? (float) video.width / 640f : 1f;
 			previewFrame = createImage((int) (video.width / scalingFactor), (int) (video.height / scalingFactor), RGB);
+			previewFrameTimecode = video.time();
 			updatePreviewFrame();
 			lastDrawUpdate = millis();
 		}

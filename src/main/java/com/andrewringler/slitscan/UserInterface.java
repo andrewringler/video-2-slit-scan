@@ -33,6 +33,7 @@ public class UserInterface {
 	private final Button selectVideoFile;
 	private final Button generateSlitScanImageButton;
 	private final RadioButton choosePreviewMode;
+	private final Slider videoScrubber;
 	
 	public boolean draggingSlit = false;
 	public float SLIT_LOCATION = 0.5f; // [0-1]
@@ -40,6 +41,7 @@ public class UserInterface {
 	private float videoDrawHeight = 0;
 	private int videoWidth = 0;
 	private int videoHeight = 0;
+	private boolean scrubbing = false;
 	
 	public UserInterface(Video2SlitScan p) {
 		this.p = p;
@@ -152,6 +154,16 @@ public class UserInterface {
 			}
 		});
 		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 330).setSize(300, 15).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
+		
+		videoScrubber = cp5.addSlider("videoScrubber").setLabel("").setPosition(50, p.height - 50).setSize(p.width - 150, 30).setRange(0f, 1f).setSliderMode(Slider.FLEXIBLE);
+		videoScrubber.addCallback(new CallbackListener() {
+			@Override
+			public void controlEvent(CallbackEvent theEvent) {
+				if (!p.generatingSlitScanImage) {
+					scrubbing = true;
+				}
+			}
+		});
 	}
 	
 	public float getPlaySpeed() {
@@ -225,6 +237,9 @@ public class UserInterface {
 		}
 		imageWidthField.setText(String.valueOf(frameCount * slitWidth));
 		imageHeightField.setText(String.valueOf(p.video.height));
+		
+		videoScrubber.setValue(0);
+		videoScrubber.setRange(0, p.video.duration());
 	}
 	
 	public Integer getStartingPixel() {
@@ -280,5 +295,21 @@ public class UserInterface {
 	
 	public int getScaledSlitLocation() {
 		return (int) round(SLIT_LOCATION * videoDrawWidth);
+	}
+	
+	public float getVideoPlayhead() {
+		return videoScrubber.getValue();
+	}
+	
+	public boolean scrubbing() {
+		return scrubbing;
+	}
+	
+	public void doneScrubbing() {
+		scrubbing = false;
+	}
+	
+	public void updatePlayhead(float time) {
+		videoScrubber.setValue(time);
 	}
 }
