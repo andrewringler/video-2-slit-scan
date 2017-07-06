@@ -52,12 +52,12 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void settings() {
-		size((int) (1920 * 0.5), (int) (1080 * 0.5), PGraphics2D.class.getCanonicalName());
+		size(1200, 750, PGraphics2D.class.getCanonicalName());
 	}
 	
 	public void setup() {
+		surface.setResizable(true);
 		background(0);
-		previewFrame = createImage(width, height, RGB);
 		
 		ui = new UserInterface(this);
 		
@@ -133,21 +133,39 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void draw() {
-		image(previewFrame, 0, 0, width, height);
+		background(0);
 		
-		// draw slit location
-		noFill();
-		strokeWeight(1);
-		stroke(255);
-		patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x0300, 1);
-		stroke(0);
-		patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x3000, 1);
-		
-		if (ui.draggingSlit) {
-			stroke(255, 255, 0);
-			patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x0300, 1);
-			stroke(0, 255, 0);
-			patternLine((int) (ui.SLIT_LOCATION * width), 0, (int) (ui.SLIT_LOCATION * width), height, 0x3000, 1);
+		if (previewFrame != null) {
+			ui.updateVideoDrawDimesions(previewFrame.width, previewFrame.height, video.width, video.height);
+			
+			if (ui.previewModeFrame()) {
+				// fit video in our window
+				image(previewFrame, 0, 0, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
+			} else {
+				int slitLocationInPreviewFrame = (int) round(previewFrame.width * ui.SLIT_LOCATION);
+				copy(previewFrame, slitLocationInPreviewFrame, 0, ui.getSlitWidth(), previewFrame.height, ui.getScaledSlitLocation(), 0, ui.getSlitWidth(), (int) ui.getVideoDrawHeight());
+			}
+			
+			// draw slit location
+			noFill();
+			strokeWeight(1);
+			stroke(255);
+			patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
+			stroke(0);
+			patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			
+			if (ui.draggingSlit) {
+				stroke(255, 255, 0);
+				patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
+				stroke(0, 255, 0);
+				patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			}
+			
+			// Video frame border
+			strokeWeight(1);
+			stroke(100, 100, 100);
+			noFill();
+			rect(0, 0, ui.getVideoDrawWidth() + 1, ui.getVideoDrawHeight() + 1);
 		}
 		
 		if (doPause && video != null) {
@@ -179,6 +197,8 @@ public class Video2SlitScan extends PApplet {
 		video.read(); // load current frame
 		
 		if (loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
+			float scalingFactor = video.width > 640 ? (float) video.width / 640f : 1f;
+			previewFrame = createImage((int) (video.width / scalingFactor), (int) (video.height / scalingFactor), RGB);
 			updatePreviewFrame();
 			lastDrawUpdate = millis();
 		}
@@ -218,7 +238,7 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	private void updatePreviewFrame() {
-		PImage frame = createImage(width, height, RGB);
+		PImage frame = createImage(previewFrame.width, previewFrame.height, RGB);
 		frame.copy(video, 0, 0, video.width, video.height, 0, 0, previewFrame.width, previewFrame.height);
 		previewFrame = frame;
 	}

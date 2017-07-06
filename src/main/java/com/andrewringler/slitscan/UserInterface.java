@@ -1,5 +1,7 @@
 package com.andrewringler.slitscan;
 
+import static processing.core.PApplet.round;
+
 import java.io.File;
 
 import controlP5.Button;
@@ -30,9 +32,14 @@ public class UserInterface {
 	private final Textfield slitWidthField;
 	private final Button selectVideoFile;
 	private final Button generateSlitScanImageButton;
+	private final RadioButton choosePreviewMode;
 	
 	public boolean draggingSlit = false;
 	public float SLIT_LOCATION = 0.5f; // [0-1]
+	private float videoDrawWidth = 0;
+	private float videoDrawHeight = 0;
+	private int videoWidth = 0;
+	private int videoHeight = 0;
 	
 	public UserInterface(Video2SlitScan p) {
 		this.p = p;
@@ -65,7 +72,7 @@ public class UserInterface {
 		});
 		
 		// Slit scan setup/run
-		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 230).setBackgroundHeight(250).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
+		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 230).setBackgroundHeight(350).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
 		cp5.addTextlabel("playSpeedLabel").setText("Play Speed").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
 		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
 		playSpeed.activate(0);
@@ -106,10 +113,22 @@ public class UserInterface {
 		slitWidthField.onChange(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent theEvent) {
-				Integer slitWidth = Integer.valueOf(slitWidthField.getText());
-				if (slitWidth <= 0) {
-					slitWidth = 1;
+				Integer slitWidth = 1;
+				if (slitWidthField.getText() == null || slitWidthField.getText() == "") {
 					slitWidthField.setText(String.valueOf(slitWidth));
+				} else {
+					slitWidth = Integer.valueOf(slitWidthField.getText());
+					if (slitWidth <= 0) {
+						slitWidth = 1;
+						slitWidthField.setText(String.valueOf(slitWidth));
+					}
+				}
+				
+				if (videoWidth > 0) {
+					float maxSlitLocation = ((float) videoWidth - (float) slitWidth) / (float) videoWidth;
+					if (SLIT_LOCATION > maxSlitLocation) {
+						SLIT_LOCATION = maxSlitLocation;
+					}
 				}
 				
 				Integer frameCount = Integer.valueOf(videoFrameCountField.getText());
@@ -122,13 +141,17 @@ public class UserInterface {
 		imageWidthField = cp5.addTextfield("imageWidthField").setLabel("Width").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(true).setPosition(170, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		imageHeightField = cp5.addTextfield("imageHeightField").setLabel("Height").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(false).setPosition(240, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		
-		generateSlitScanImageButton = cp5.addButton("generateSlitScanImageButton").setLabel("Generate slit-scan image").setPosition(10, 200).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
+		cp5.addTextlabel("previewModeLabel").setText("Preview Mode").setPosition(6, 170).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
+		choosePreviewMode = cp5.addRadioButton("choosePreviewMode").setPosition(10, 185).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Frame", 1).addItem("Slit", 2).setGroup(slitGenerationUI);
+		choosePreviewMode.activate(0);
+		
+		generateSlitScanImageButton = cp5.addButton("generateSlitScanImageButton").setLabel("Generate slit-scan image").setPosition(10, 300).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
 				p.generateSlitScan();
 			}
 		});
-		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 230).setSize(300, 15).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
+		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 330).setSize(300, 15).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
 	}
 	
 	public float getPlaySpeed() {
@@ -145,13 +168,23 @@ public class UserInterface {
 	
 	public void mouseDragged() {
 		if (draggingSlit) {
-			SLIT_LOCATION = (float) p.mouseX / p.width;
+			int slitWidth = getSlitWidth();
+			float maxSlitLocation = ((float) videoWidth - (float) slitWidth) / (float) videoWidth;
+			float newSlitLocation = (float) p.mouseX / (float) videoDrawWidth;
+			if (newSlitLocation > maxSlitLocation) {
+				SLIT_LOCATION = maxSlitLocation;
+			} else if (newSlitLocation < 0) {
+				SLIT_LOCATION = 0;
+			} else {
+				SLIT_LOCATION = newSlitLocation;
+			}
 		}
 	}
 	
 	public void mousePressed() {
-		int slitLocationX = (int) (SLIT_LOCATION * p.width);
-		if (p.mouseX < slitLocationX + 5 && p.mouseX > slitLocationX - 5) {
+		int slitLocationX = (int) (SLIT_LOCATION * videoDrawWidth);
+		int slitWidth = getSlitWidth();
+		if (p.mouseX < slitLocationX + slitWidth + 5 && p.mouseX > slitLocationX - 5) {
 			draggingSlit = true;
 		}
 	}
@@ -203,6 +236,49 @@ public class UserInterface {
 	}
 	
 	public int getSlitWidth() {
-		return Integer.valueOf(slitWidthField.getText());
+		if (slitWidthField.getText() != null && !slitWidthField.getText().isEmpty()) {
+			return Integer.valueOf(slitWidthField.getText());
+		}
+		return 1;
+	}
+	
+	public boolean previewModeFrame() {
+		int previewModeI = (int) choosePreviewMode.getValue();
+		if (previewModeI == 1) {
+			return true;
+		}
+		return false;
+	}
+	
+	public void updateVideoDrawDimesions(int previewFrameWidth, int previewFrameHeight, int videoWidth, int videoHeight) {
+		this.videoWidth = videoWidth;
+		this.videoHeight = videoHeight;
+		float scalingFactor = previewFrameWidth < p.width ? (float) p.width / (float) previewFrameWidth : 1f;
+		float newVideoDrawWidth = previewFrameWidth * scalingFactor;
+		float newVideoDrawHeight = previewFrameHeight * scalingFactor;
+		float aspectRatio = newVideoDrawWidth / newVideoDrawHeight;
+		if (newVideoDrawWidth > p.width) {
+			newVideoDrawWidth = p.width;
+			newVideoDrawHeight = (int) (newVideoDrawWidth / aspectRatio);
+		}
+		if (newVideoDrawHeight > p.height) {
+			newVideoDrawHeight = p.height;
+			newVideoDrawWidth = (int) (newVideoDrawHeight * aspectRatio);
+		}
+		
+		videoDrawWidth = newVideoDrawWidth;
+		videoDrawHeight = newVideoDrawHeight;
+	}
+	
+	public float getVideoDrawWidth() {
+		return videoDrawWidth;
+	}
+	
+	public float getVideoDrawHeight() {
+		return videoDrawHeight;
+	}
+	
+	public int getScaledSlitLocation() {
+		return (int) round(SLIT_LOCATION * videoDrawWidth);
 	}
 }
