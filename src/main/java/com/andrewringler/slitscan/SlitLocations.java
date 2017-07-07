@@ -1,11 +1,16 @@
 package com.andrewringler.slitscan;
 
+import static processing.core.PApplet.round;
+
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class SlitLocations {
 	private final Video2SlitScan p;
 	private final UserInterface ui;
 	private final ConcurrentSkipListSet<SlitLocationKeyframe> slitLocations = new ConcurrentSkipListSet<SlitLocationKeyframe>();
+	
+	public boolean draggingSlit = false;
+	public float SLIT_LOCATION = 0.5f; // [0-1]
 	private SlitLocationKeyframe editingKeyframe;
 	
 	public SlitLocations(Video2SlitScan p, UserInterface ui, float initialSlitLocation) {
@@ -15,6 +20,33 @@ public class SlitLocations {
 		slitLocations.add(new SlitLocationKeyframe(1f, initialSlitLocation));
 	}
 	
+	public void mouseDragged() {
+		if (draggingSlit) {
+			int slitWidth = ui.getSlitWidth();
+			float maxSlitLocation = ((float) ui.getVideoWidth() - (float) slitWidth) / (float) ui.getVideoWidth();
+			float newSlitLocation = (float) p.mouseX / (float) ui.getVideoDrawWidth();
+			if (newSlitLocation > maxSlitLocation) {
+				SLIT_LOCATION = maxSlitLocation;
+			} else if (newSlitLocation < 0) {
+				SLIT_LOCATION = 0;
+			} else {
+				SLIT_LOCATION = newSlitLocation;
+			}
+		}
+	}
+	
+	public void mousePressed() {
+		int slitLocationX = (int) (SLIT_LOCATION * ui.getVideoDrawWidth());
+		int slitWidth = ui.getSlitWidth();
+		if (p.mouseX < slitLocationX + slitWidth + 5 && p.mouseX > slitLocationX - 5) {
+			draggingSlit = true;
+		}
+	}
+	
+	public void mouseReleased() {
+		draggingSlit = false;
+	}
+	
 	public void draw() {
 		if (!ui.slitLocationFixed()) {
 			/* cancel keyframe editing, user has scrubbed away from current keyframe */
@@ -22,9 +54,9 @@ public class SlitLocations {
 				editingKeyframe = null;
 			}
 			/* user has moved the slit location for the selected keyframe */
-			if (editingKeyframe != null && editingKeyframe.getLocationInFrame() != ui.SLIT_LOCATION) {
+			if (editingKeyframe != null && editingKeyframe.getLocationInFrame() != SLIT_LOCATION) {
 				slitLocations.remove(editingKeyframe);
-				SlitLocationKeyframe newKeyframe = editingKeyframe.withNewLocationInFrame(ui.SLIT_LOCATION);
+				SlitLocationKeyframe newKeyframe = editingKeyframe.withNewLocationInFrame(SLIT_LOCATION);
 				slitLocations.add(newKeyframe);
 				editingKeyframe = newKeyframe;
 			}
@@ -34,7 +66,7 @@ public class SlitLocations {
 					float videoPlayhead = keyframe.getPositionInVideo() * p.video.duration();
 					if (ui.getVideoPlayhead() == videoPlayhead) {
 						ui.setVideoPlayhead(videoPlayhead);
-						ui.setSlitLocation(keyframe.getLocationInFrame());
+						SLIT_LOCATION = keyframe.getLocationInFrame();
 						editingKeyframe = keyframe;
 						break;
 					}
@@ -53,7 +85,7 @@ public class SlitLocations {
 					if (p.mousePressed) {
 						if (!p.generatingSlitScanImage) {
 							ui.setVideoPlayhead(keyframe.getPositionInVideo() * p.video.duration());
-							ui.setSlitLocation(keyframe.getLocationInFrame());
+							SLIT_LOCATION = keyframe.getLocationInFrame();
 							editingKeyframe = keyframe;
 						}
 					}
@@ -76,15 +108,20 @@ public class SlitLocations {
 		p.noFill();
 		p.strokeWeight(1);
 		p.stroke(255);
-		p.patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
+		p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
 		p.stroke(0);
-		p.patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
+		p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
 		
-		if (ui.draggingSlit) {
+		if (draggingSlit) {
 			p.stroke(255, 255, 0);
-			p.patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
+			p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
 			p.stroke(0, 255, 0);
-			p.patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
 		}
 	}
+	
+	public int getScaledSlitLocation() {
+		return (int) round(SLIT_LOCATION * ui.getVideoDrawWidth());
+	}
+	
 }
