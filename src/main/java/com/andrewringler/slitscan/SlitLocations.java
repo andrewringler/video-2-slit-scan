@@ -9,8 +9,8 @@ public class SlitLocations {
 	private final UserInterface ui;
 	private final ConcurrentSkipListSet<SlitLocationKeyframe> slitLocations = new ConcurrentSkipListSet<SlitLocationKeyframe>();
 	
-	public boolean draggingSlit = false;
-	public float SLIT_LOCATION = 0.5f; // [0-1]
+	private boolean draggingSlit = false;
+	private float slitLocationUI = 0.5f; // [0-1]
 	private SlitLocationKeyframe editingKeyframe;
 	
 	public SlitLocations(Video2SlitScan p, UserInterface ui, float initialSlitLocation) {
@@ -26,17 +26,17 @@ public class SlitLocations {
 			float maxSlitLocation = ((float) ui.getVideoWidth() - (float) slitWidth) / (float) ui.getVideoWidth();
 			float newSlitLocation = (float) p.mouseX / (float) ui.getVideoDrawWidth();
 			if (newSlitLocation > maxSlitLocation) {
-				SLIT_LOCATION = maxSlitLocation;
+				slitLocationUI = maxSlitLocation;
 			} else if (newSlitLocation < 0) {
-				SLIT_LOCATION = 0;
+				slitLocationUI = 0;
 			} else {
-				SLIT_LOCATION = newSlitLocation;
+				slitLocationUI = newSlitLocation;
 			}
 		}
 	}
 	
 	public void mousePressed() {
-		int slitLocationX = (int) (SLIT_LOCATION * ui.getVideoDrawWidth());
+		int slitLocationX = (int) (slitLocationUI * ui.getVideoDrawWidth());
 		int slitWidth = ui.getSlitWidth();
 		if (p.mouseX < slitLocationX + slitWidth + 5 && p.mouseX > slitLocationX - 5) {
 			draggingSlit = true;
@@ -54,9 +54,9 @@ public class SlitLocations {
 				editingKeyframe = null;
 			}
 			/* user has moved the slit location for the selected keyframe */
-			if (editingKeyframe != null && editingKeyframe.getLocationInFrame() != SLIT_LOCATION) {
+			if (editingKeyframe != null && editingKeyframe.getLocationInFrame() != slitLocationUI) {
 				slitLocations.remove(editingKeyframe);
-				SlitLocationKeyframe newKeyframe = editingKeyframe.withNewLocationInFrame(SLIT_LOCATION);
+				SlitLocationKeyframe newKeyframe = editingKeyframe.withNewLocationInFrame(slitLocationUI);
 				slitLocations.add(newKeyframe);
 				editingKeyframe = newKeyframe;
 			}
@@ -66,7 +66,7 @@ public class SlitLocations {
 					float videoPlayhead = keyframe.getPositionInVideo() * p.video.duration();
 					if (ui.getVideoPlayhead() == videoPlayhead) {
 						ui.setVideoPlayhead(videoPlayhead);
-						SLIT_LOCATION = keyframe.getLocationInFrame();
+						slitLocationUI = keyframe.getLocationInFrame();
 						editingKeyframe = keyframe;
 						break;
 					}
@@ -85,7 +85,7 @@ public class SlitLocations {
 					if (p.mousePressed) {
 						if (!p.generatingSlitScanImage) {
 							ui.setVideoPlayhead(keyframe.getPositionInVideo() * p.video.duration());
-							SLIT_LOCATION = keyframe.getLocationInFrame();
+							slitLocationUI = keyframe.getLocationInFrame();
 							editingKeyframe = keyframe;
 						}
 					}
@@ -121,7 +121,11 @@ public class SlitLocations {
 	}
 	
 	public int getScaledSlitLocation() {
-		return (int) round(SLIT_LOCATION * ui.getVideoDrawWidth());
+		return (int) round(slitLocationUI * ui.getVideoDrawWidth());
+	}
+	
+	public float getSlitLocationNormalized(float positionInVideo) {
+		return slitLocationUI;
 	}
 	
 }

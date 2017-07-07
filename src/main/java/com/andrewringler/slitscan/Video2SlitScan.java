@@ -145,7 +145,8 @@ public class Video2SlitScan extends PApplet {
 				// fit video in our window
 				image(previewFrame, 0, 0, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
 			} else {
-				int slitLocationInPreviewFrame = (int) round(previewFrame.width * slitLocations.SLIT_LOCATION);
+				float positionInVideo = previewFrameTimecode / video.duration();
+				int slitLocationInPreviewFrame = (int) round(previewFrame.width * slitLocations.getSlitLocationNormalized(positionInVideo));
 				copy(previewFrame, slitLocationInPreviewFrame, 0, ui.getSlitWidth(), previewFrame.height, slitLocations.getScaledSlitLocation(), 0, ui.getSlitWidth(), (int) ui.getVideoDrawHeight());
 			}
 			
@@ -231,7 +232,13 @@ public class Video2SlitScan extends PApplet {
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
 			PImage slit = createImage(tiffUpdater.getSlitWidth(), video.height, RGB);
-			slit.copy(video, (int) round(video.width * slitLocations.SLIT_LOCATION), 0, slit.width, video.height, 0, 0, slit.width, slit.height);
+			float positionInVideo = video.time() / video.duration();
+			int slitX = (int) round(video.width * slitLocations.getSlitLocationNormalized(positionInVideo));
+			/* check if slit is too close to the edge */
+			if (slitX + slit.width > video.width) {
+				slitX = video.width - slit.width;
+			}
+			slit.copy(video, slitX, 0, slit.width, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
