@@ -1,7 +1,5 @@
 package com.andrewringler.slitscan;
 
-import static processing.core.PApplet.round;
-
 import java.io.File;
 
 import controlP5.Button;
@@ -38,8 +36,6 @@ public class UserInterface {
 	private final int videoScrubberWidth;
 	private final int videoScrubberXOffset;
 	
-	public boolean draggingSlit = false;
-	public float SLIT_LOCATION = 0.5f; // [0-1]
 	private float videoDrawWidth = 0;
 	private float videoDrawHeight = 0;
 	private int videoWidth = 0;
@@ -130,12 +126,12 @@ public class UserInterface {
 					}
 				}
 				
-				if (videoWidth > 0) {
-					float maxSlitLocation = ((float) videoWidth - (float) slitWidth) / (float) videoWidth;
-					if (SLIT_LOCATION > maxSlitLocation) {
-						SLIT_LOCATION = maxSlitLocation;
-					}
-				}
+				//				if (videoWidth > 0) {
+				//					float maxSlitLocation = ((float) videoWidth - (float) slitWidth) / (float) videoWidth;
+				//					if (SLIT_LOCATION > maxSlitLocation) {
+				//						SLIT_LOCATION = maxSlitLocation;
+				//					}
+				//				}
 				
 				Integer frameCount = Integer.valueOf(videoFrameCountField.getText());
 				int newWidth = slitWidth * frameCount;
@@ -187,33 +183,6 @@ public class UserInterface {
 	
 	public void updateProgress(float progress) {
 		generationProgressSlider.setValue(progress);
-	}
-	
-	public void mouseDragged() {
-		if (draggingSlit) {
-			int slitWidth = getSlitWidth();
-			float maxSlitLocation = ((float) videoWidth - (float) slitWidth) / (float) videoWidth;
-			float newSlitLocation = (float) p.mouseX / (float) videoDrawWidth;
-			if (newSlitLocation > maxSlitLocation) {
-				SLIT_LOCATION = maxSlitLocation;
-			} else if (newSlitLocation < 0) {
-				SLIT_LOCATION = 0;
-			} else {
-				SLIT_LOCATION = newSlitLocation;
-			}
-		}
-	}
-	
-	public void mousePressed() {
-		int slitLocationX = (int) (SLIT_LOCATION * videoDrawWidth);
-		int slitWidth = getSlitWidth();
-		if (p.mouseX < slitLocationX + slitWidth + 5 && p.mouseX > slitLocationX - 5) {
-			draggingSlit = true;
-		}
-	}
-	
-	public void mouseReleased() {
-		draggingSlit = false;
 	}
 	
 	public void setVideoDuration(float videoDuration) {
@@ -312,14 +281,6 @@ public class UserInterface {
 		return videoDrawHeight;
 	}
 	
-	public int getScaledSlitLocation() {
-		return (int) round(SLIT_LOCATION * videoDrawWidth);
-	}
-	
-	public void setSlitLocation(float locationInFrame) {
-		this.SLIT_LOCATION = locationInFrame;
-	}
-	
 	public float getVideoPlayhead() {
 		return videoScrubber.getValue();
 	}
@@ -354,5 +315,9 @@ public class UserInterface {
 	
 	public int getVideoScrubberXOffset() {
 		return videoScrubberXOffset;
+	}
+	
+	public int getVideoWidth() {
+		return videoWidth;
 	}
 }
