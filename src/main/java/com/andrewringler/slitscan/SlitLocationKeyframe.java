@@ -7,9 +7,16 @@ public class SlitLocationKeyframe implements Comparable<SlitLocationKeyframe> {
 	// percentage top-to-bottom for horizontal slice
 	private final float locationInFrame;
 	
+	private final boolean deletable;
+	
 	public SlitLocationKeyframe(float positionInVideo, float locationInFrame) {
+		this(positionInVideo, locationInFrame, true);
+	}
+	
+	public SlitLocationKeyframe(float positionInVideo, float locationInFrame, boolean deletable) {
 		this.positionInVideo = positionInVideo;
 		this.locationInFrame = locationInFrame;
+		this.deletable = deletable;
 	}
 	
 	public float getPositionInVideo() {
@@ -18,6 +25,10 @@ public class SlitLocationKeyframe implements Comparable<SlitLocationKeyframe> {
 	
 	public float getLocationInFrame() {
 		return locationInFrame;
+	}
+	
+	public boolean isDeletable() {
+		return deletable;
 	}
 	
 	@Override
