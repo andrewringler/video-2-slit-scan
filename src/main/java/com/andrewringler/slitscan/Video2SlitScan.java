@@ -146,8 +146,11 @@ public class Video2SlitScan extends PApplet {
 				image(previewFrame, 0, 0, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
 			} else {
 				float positionInVideo = previewFrameTimecode / video.duration();
-				int slitLocationInPreviewFrame = (int) round(previewFrame.width * slitLocations.getSlitLocationNormalized(positionInVideo));
-				copy(previewFrame, slitLocationInPreviewFrame, 0, ui.getSlitWidth(), previewFrame.height, slitLocations.getScaledSlitLocation(), 0, ui.getSlitWidth(), (int) ui.getVideoDrawHeight());
+				float slitLocationNormalized = slitLocations.getSlitLocationNormalized(positionInVideo);
+				int slitLocationInPreviewFrame = (int) round(previewFrame.width * slitLocationNormalized);
+				int slitLocationOnVideoDrawSize = (int) round(ui.getVideoDrawWidth() * slitLocationNormalized);
+				
+				copy(previewFrame, slitLocationInPreviewFrame, 0, ui.getSlitWidth(), previewFrame.height, slitLocationOnVideoDrawSize, 0, ui.getSlitWidth(), (int) ui.getVideoDrawHeight());
 			}
 			
 			slitLocations.draw();

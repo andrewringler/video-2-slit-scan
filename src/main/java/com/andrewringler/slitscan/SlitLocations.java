@@ -133,7 +133,7 @@ public class SlitLocations {
 		}
 	}
 	
-	public int getScaledSlitLocation() {
+	private int getScaledSlitLocation() {
 		return (int) round(slitLocationUI * ui.getVideoDrawWidth());
 	}
 	
