@@ -153,7 +153,8 @@ public class Video2SlitScan extends PApplet {
 				copy(previewFrame, slitLocationInPreviewFrame, 0, ui.getSlitWidth(), previewFrame.height, slitLocationOnVideoDrawSize, 0, ui.getSlitWidth(), (int) ui.getVideoDrawHeight());
 			}
 			
-			slitLocations.draw();
+			float positionInVideo = previewFrameTimecode / video.duration();
+			slitLocations.draw(positionInVideo);
 			
 			// Video frame border
 			strokeWeight(1);

@@ -1,5 +1,6 @@
 package com.andrewringler.slitscan;
 
+import static processing.core.PApplet.map;
 import static processing.core.PApplet.round;
 
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -61,7 +62,7 @@ public class SlitLocations {
 		draggingSlit = false;
 	}
 	
-	public void draw() {
+	public void draw(float positionInVideo) {
 		if (!ui.slitLocationFixed()) {
 			/* cancel keyframe editing, user has scrubbed away from current keyframe */
 			if (editingKeyframe != null && ui.getVideoPlayhead() != editingKeyframe.getPositionInVideo() * p.video.duration()) {
@@ -121,24 +122,41 @@ public class SlitLocations {
 		p.noFill();
 		p.strokeWeight(1);
 		p.stroke(255);
-		p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
+		int scaledSlitLocation = round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
+		p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
 		p.stroke(0);
-		p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
+		p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
 		
 		if (draggingSlit) {
 			p.stroke(255, 255, 0);
-			p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
+			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
 			p.stroke(0, 255, 0);
-			p.patternLine(getScaledSlitLocation(), 0, getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
 		}
 	}
 	
-	private int getScaledSlitLocation() {
-		return (int) round(slitLocationUI * ui.getVideoDrawWidth());
-	}
-	
 	public float getSlitLocationNormalized(float positionInVideo) {
-		return slitLocationUI;
+		if (ui.slitLocationFixed()) {
+			return slitLocationUI;
+		}
+		
+		SlitLocationKeyframe left = null;
+		SlitLocationKeyframe right = null;
+		for (SlitLocationKeyframe keyframe : slitLocations) {
+			if (keyframe.getPositionInVideo() == positionInVideo) {
+				return keyframe.getLocationInFrame();
+			}
+			if (keyframe.getPositionInVideo() < positionInVideo) {
+				left = keyframe;
+			}
+			if (keyframe.getPositionInVideo() > positionInVideo) {
+				right = keyframe;
+			}
+			if (left != null && right != null) {
+				break;
+			}
+		}
+		
+		return map(positionInVideo, left.getPositionInVideo(), right.getPositionInVideo(), left.getLocationInFrame(), right.getLocationInFrame());
 	}
-	
 }
