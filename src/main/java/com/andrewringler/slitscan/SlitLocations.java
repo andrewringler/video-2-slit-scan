@@ -88,11 +88,17 @@ public class SlitLocations {
 				}
 			}
 			/* add a new keyframe */
-			if (editingKeyframe == null && p.keyPressed && p.key == 'k') {
+			if (editingKeyframe == null && p.keyPressed && p.key == 'a') {
 				SlitLocationKeyframe keyframe = new SlitLocationKeyframe(positionInVideo, getSlitLocationNormalized(positionInVideo));
 				slitLocations.add(keyframe);
 				ui.setVideoPlayhead(positionInVideo * p.video.duration());
 				editingKeyframe = keyframe;
+			}
+			/* delete a keyframe */
+			if (editingKeyframe != null && editingKeyframe.isDeletable() && p.keyPressed && p.key == 'd') {
+				System.out.println("deleted");
+				slitLocations.remove(editingKeyframe);
+				editingKeyframe = null;
 			}
 			
 			// draw keyframe locations (in time) on scrubber as diamonds
@@ -162,6 +168,10 @@ public class SlitLocations {
 			if (left != null && right != null) {
 				break;
 			}
+		}
+		
+		if (left == null || right == null) {
+			System.out.println(left + " " + right + " all: " + slitLocations);
 		}
 		
 		return map(positionInVideo, left.getPositionInVideo(), right.getPositionInVideo(), left.getLocationInFrame(), right.getLocationInFrame());

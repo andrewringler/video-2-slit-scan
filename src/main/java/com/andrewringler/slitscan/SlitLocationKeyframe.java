@@ -59,6 +59,11 @@ public class SlitLocationKeyframe implements Comparable<SlitLocationKeyframe> {
 	}
 	
 	public SlitLocationKeyframe withNewLocationInFrame(float newLocationInFrame) {
-		return new SlitLocationKeyframe(positionInVideo, newLocationInFrame);
+		return new SlitLocationKeyframe(positionInVideo, newLocationInFrame, deletable);
+	}
+	
+	@Override
+	public String toString() {
+		return "SlitLocationKeyframe [positionInVideo=" + positionInVideo + ", locationInFrame=" + locationInFrame + ", deletable=" + deletable + "]";
 	}
 }
