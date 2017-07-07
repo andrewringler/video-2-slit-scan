@@ -87,6 +87,10 @@ public class SlitLocations {
 					}
 				}
 			}
+			/* add a new keyframe */
+			if (editingKeyframe == null && p.keyPressed && p.key == 'k') {
+				slitLocations.add(new SlitLocationKeyframe(positionInVideo, getSlitLocationNormalized(positionInVideo)));
+			}
 			
 			// draw keyframe locations (in time) on scrubber as diamonds
 			float scale = 15;
