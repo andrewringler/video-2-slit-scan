@@ -42,13 +42,14 @@ public class UserInterface {
 	private int videoHeight = 0;
 	private boolean scrubbing = false;
 	private int videoScrubberYOffset;
+	public PFont robotoMono;
 	
 	public UserInterface(Video2SlitScan p) {
 		this.p = p;
 		cp5 = new ControlP5(p);
 		
-		PFont pfont = p.createFont("RobotoMono-Medium", 10, true); // use true/false for smooth/no-smooth
-		ControlFont font = new ControlFont(pfont, 10);
+		robotoMono = p.createFont("RobotoMono-Medium", 10, true);
+		ControlFont font = new ControlFont(robotoMono, 10);
 		cp5.setFont(font);
 		
 		// Video load/setup
@@ -150,6 +151,8 @@ public class UserInterface {
 		cp5.addTextlabel("slitSelectionModeLabel").setText("Slit Location").setPosition(6, 200).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
 		slitSelectionMode = cp5.addRadioButton("slitSelectionMode").setPosition(10, 215).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Fixed", 1).addItem("Keyframes", 2).setGroup(slitGenerationUI);
 		slitSelectionMode.activate(0);
+		
+		cp5.addLabel("a: add keyframe, d: delete keyframe").setPosition(6, 230).setGroup(slitGenerationUI);
 		
 		generateSlitScanImageButton = cp5.addButton("generateSlitScanImageButton").setLabel("Generate slit-scan image").setPosition(10, 300).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override

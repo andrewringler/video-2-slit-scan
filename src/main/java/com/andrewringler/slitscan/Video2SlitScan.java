@@ -58,7 +58,9 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void setup() {
-		surface.setResizable(true);
+		// TODO still need to deal with moving scrubber
+		// if we want to allow resizing window
+		//		surface.setResizable(true);
 		background(0);
 		
 		ui = new UserInterface(this);
