@@ -132,19 +132,21 @@ public class SlitLocations {
 		}
 		
 		// Draw slit location
-		p.noFill();
-		p.strokeWeight(1);
-		p.stroke(255);
-		int scaledSlitLocation = round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
-		p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
-		p.stroke(0);
-		p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
-		
-		if (draggingSlit) {
-			p.stroke(255, 255, 0);
+		if (ui.previewModeFrame()) {
+			p.noFill();
+			p.strokeWeight(1);
+			p.stroke(255);
+			int scaledSlitLocation = round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
 			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
-			p.stroke(0, 255, 0);
+			p.stroke(0);
 			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			
+			if (draggingSlit) {
+				p.stroke(255, 255, 0);
+				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
+				p.stroke(0, 255, 0);
+				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			}
 		}
 	}
 	
