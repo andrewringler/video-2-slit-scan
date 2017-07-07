@@ -22,6 +22,13 @@ public class SlitLocations {
 	
 	public void mouseDragged() {
 		if (draggingSlit) {
+			// if we are using keyframes, we can only edit the slit location
+			// if there is a keyframe present at the current scrub location
+			if (ui.slitLocationKeyframes() && editingKeyframe == null) {
+				draggingSlit = false;
+				return;
+			}
+			
 			int slitWidth = ui.getSlitWidth();
 			float maxSlitLocation = ((float) ui.getVideoWidth() - (float) slitWidth) / (float) ui.getVideoWidth();
 			float newSlitLocation = (float) p.mouseX / (float) ui.getVideoDrawWidth();
@@ -36,6 +43,13 @@ public class SlitLocations {
 	}
 	
 	public void mousePressed() {
+		// if we are using keyframes, we can only edit the slit location
+		// if there is a keyframe present at the current scrub location
+		if (ui.slitLocationKeyframes() && editingKeyframe == null) {
+			draggingSlit = false;
+			return;
+		}
+		
 		int slitLocationX = (int) (slitLocationUI * ui.getVideoDrawWidth());
 		int slitWidth = ui.getSlitWidth();
 		if (p.mouseX < slitLocationX + slitWidth + 5 && p.mouseX > slitLocationX - 5) {
@@ -91,7 +105,6 @@ public class SlitLocations {
 					}
 				} else if (editingKeyframe == keyframe) {
 					p.fill(255, 200, 0);
-					p.noStroke();
 				} else {
 					p.fill(255);
 				}

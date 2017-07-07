@@ -166,11 +166,15 @@ public class UserInterface {
 		videoScrubber.addCallback(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent theEvent) {
-				if (!p.generatingSlitScanImage) {
-					scrubbing = true;
-				}
+				checkScrubbing();
 			}
 		});
+	}
+	
+	private void checkScrubbing() {
+		if (!p.generatingSlitScanImage) {
+			scrubbing = true;
+		}
 	}
 	
 	public float getPlaySpeed() {
@@ -253,6 +257,10 @@ public class UserInterface {
 		return false;
 	}
 	
+	public boolean slitLocationKeyframes() {
+		return !slitLocationFixed();
+	}
+	
 	public void updateVideoDrawDimesions(int previewFrameWidth, int previewFrameHeight, int videoWidth, int videoHeight) {
 		this.videoWidth = videoWidth;
 		this.videoHeight = videoHeight;
@@ -287,6 +295,7 @@ public class UserInterface {
 	
 	public void setVideoPlayhead(float newVideoPlayhead) {
 		videoScrubber.setValue(newVideoPlayhead);
+		checkScrubbing();
 	}
 	
 	public boolean scrubbing() {
