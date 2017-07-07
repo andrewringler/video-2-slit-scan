@@ -34,6 +34,9 @@ public class UserInterface {
 	private final Button generateSlitScanImageButton;
 	private final RadioButton choosePreviewMode;
 	private final Slider videoScrubber;
+	private final RadioButton slitSelectionMode;
+	private final int videoScrubberWidth;
+	private final int videoScrubberXOffset;
 	
 	public boolean draggingSlit = false;
 	public float SLIT_LOCATION = 0.5f; // [0-1]
@@ -42,6 +45,7 @@ public class UserInterface {
 	private int videoWidth = 0;
 	private int videoHeight = 0;
 	private boolean scrubbing = false;
+	private int videoScrubberYOffset;
 	
 	public UserInterface(Video2SlitScan p) {
 		this.p = p;
@@ -147,6 +151,10 @@ public class UserInterface {
 		choosePreviewMode = cp5.addRadioButton("choosePreviewMode").setPosition(10, 185).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Frame", 1).addItem("Slit", 2).setGroup(slitGenerationUI);
 		choosePreviewMode.activate(0);
 		
+		cp5.addTextlabel("slitSelectionModeLabel").setText("Slit Location").setPosition(6, 200).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
+		slitSelectionMode = cp5.addRadioButton("slitSelectionMode").setPosition(10, 215).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Fixed", 1).addItem("Keyframes", 2).setGroup(slitGenerationUI);
+		slitSelectionMode.activate(0);
+		
 		generateSlitScanImageButton = cp5.addButton("generateSlitScanImageButton").setLabel("Generate slit-scan image").setPosition(10, 300).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
@@ -155,7 +163,10 @@ public class UserInterface {
 		});
 		generationProgressSlider = cp5.addSlider("progress").setLabel("Progress").setPosition(10, 330).setSize(300, 15).setRange(0, 100).setUserInteraction(false).setGroup(slitGenerationUI);
 		
-		videoScrubber = cp5.addSlider("videoScrubber").setLabel("").setPosition(50, p.height - 50).setSize(p.width - 150, 30).setRange(0f, 1f).setSliderMode(Slider.FLEXIBLE);
+		videoScrubberWidth = p.width - 150;
+		videoScrubberXOffset = 50;
+		videoScrubberYOffset = p.height - videoScrubberXOffset;
+		videoScrubber = cp5.addSlider("videoScrubber").setLabel("").setPosition(videoScrubberXOffset, videoScrubberYOffset).setSize(videoScrubberWidth, 30).setRange(0f, 1f).setSliderMode(Slider.FLEXIBLE);
 		videoScrubber.addCallback(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent theEvent) {
@@ -265,6 +276,14 @@ public class UserInterface {
 		return false;
 	}
 	
+	public boolean slitLocationFixed() {
+		int slitLocationI = (int) slitSelectionMode.getValue();
+		if (slitLocationI == 1) {
+			return true;
+		}
+		return false;
+	}
+	
 	public void updateVideoDrawDimesions(int previewFrameWidth, int previewFrameHeight, int videoWidth, int videoHeight) {
 		this.videoWidth = videoWidth;
 		this.videoHeight = videoHeight;
@@ -297,8 +316,16 @@ public class UserInterface {
 		return (int) round(SLIT_LOCATION * videoDrawWidth);
 	}
 	
+	public void setSlitLocation(float locationInFrame) {
+		this.SLIT_LOCATION = locationInFrame;
+	}
+	
 	public float getVideoPlayhead() {
 		return videoScrubber.getValue();
+	}
+	
+	public void setVideoPlayhead(float newVideoPlayhead) {
+		videoScrubber.setValue(newVideoPlayhead);
 	}
 	
 	public boolean scrubbing() {
@@ -311,5 +338,21 @@ public class UserInterface {
 	
 	public void updatePlayhead(float time) {
 		videoScrubber.setValue(time);
+	}
+	
+	public int getVideoScrubberYOffset() {
+		return videoScrubberYOffset;
+	}
+	
+	public void setVideoScrubberYOffset(int videoScrubberYOffset) {
+		this.videoScrubberYOffset = videoScrubberYOffset;
+	}
+	
+	public int getVideoScrubberWidth() {
+		return videoScrubberWidth;
+	}
+	
+	public int getVideoScrubberXOffset() {
+		return videoScrubberXOffset;
 	}
 }

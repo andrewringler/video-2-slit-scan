@@ -34,6 +34,7 @@ public class Video2SlitScan extends PApplet {
 	// Slit generation
 	boolean generatingSlitScanImage = false;
 	boolean initSlit = false;
+	SlitLocations slitLocations;
 	
 	// file writing
 	LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
@@ -61,6 +62,7 @@ public class Video2SlitScan extends PApplet {
 		background(0);
 		
 		ui = new UserInterface(this);
+		slitLocations = new SlitLocations(this, ui, 0.5f);
 		
 		// on a Mac?
 		String home = System.getProperty("user.home");
@@ -147,20 +149,7 @@ public class Video2SlitScan extends PApplet {
 				copy(previewFrame, slitLocationInPreviewFrame, 0, ui.getSlitWidth(), previewFrame.height, ui.getScaledSlitLocation(), 0, ui.getSlitWidth(), (int) ui.getVideoDrawHeight());
 			}
 			
-			// draw slit location
-			noFill();
-			strokeWeight(1);
-			stroke(255);
-			patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
-			stroke(0);
-			patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
-			
-			if (ui.draggingSlit) {
-				stroke(255, 255, 0);
-				patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x0300, 1);
-				stroke(0, 255, 0);
-				patternLine(ui.getScaledSlitLocation(), 0, ui.getScaledSlitLocation(), (int) ui.getVideoDrawHeight(), 0x3000, 1);
-			}
+			slitLocations.draw();
 			
 			// Video frame border
 			strokeWeight(1);
@@ -263,7 +252,7 @@ public class Video2SlitScan extends PApplet {
 	 * linePattern = 0x0F0F will be medium sized dashes.
 	 * linePattern = 0xFF00 will be large dashes.
 	 */
-	void patternLine(int xStart, int yStart, int xEnd, int yEnd, int linePattern, int lineScale) {
+	public void patternLine(int xStart, int yStart, int xEnd, int yEnd, int linePattern, int lineScale) {
 		int temp, yStep, x, y;
 		int pattern = linePattern;
 		int carry;

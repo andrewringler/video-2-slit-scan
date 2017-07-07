@@ -1,3 +1,4 @@
+- multiple slit locations
 - proper frame count
   button to count frames
 - cancel button  
