@@ -17,8 +17,8 @@ public class SlitLocations {
 	public SlitLocations(Video2SlitScan p, UserInterface ui, float initialSlitLocation) {
 		this.p = p;
 		this.ui = ui;
-		slitLocations.add(new SlitLocationKeyframe(0f, initialSlitLocation));
-		slitLocations.add(new SlitLocationKeyframe(1f, initialSlitLocation));
+		slitLocations.add(new SlitLocationKeyframe(0f, initialSlitLocation, false));
+		slitLocations.add(new SlitLocationKeyframe(1f, initialSlitLocation, false));
 	}
 	
 	public void mouseDragged() {
@@ -89,7 +89,10 @@ public class SlitLocations {
 			}
 			/* add a new keyframe */
 			if (editingKeyframe == null && p.keyPressed && p.key == 'k') {
-				slitLocations.add(new SlitLocationKeyframe(positionInVideo, getSlitLocationNormalized(positionInVideo)));
+				SlitLocationKeyframe keyframe = new SlitLocationKeyframe(positionInVideo, getSlitLocationNormalized(positionInVideo));
+				slitLocations.add(keyframe);
+				ui.setVideoPlayhead(positionInVideo * p.video.duration());
+				editingKeyframe = keyframe;
 			}
 			
 			// draw keyframe locations (in time) on scrubber as diamonds
