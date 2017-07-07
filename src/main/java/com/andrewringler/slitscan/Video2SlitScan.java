@@ -172,7 +172,11 @@ public class Video2SlitScan extends PApplet {
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
 			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > 0.1) {
-				video.jump(ui.getVideoPlayhead());
+				if (ui.getVideoPlayhead() == video.duration()) {
+					video.jump(video.duration() - 0.1f);
+				} else {
+					video.jump(ui.getVideoPlayhead());
+				}
 				video.play();
 			} else {
 				ui.doneScrubbing();
