@@ -1,6 +1,6 @@
-- multiple slit locations
+- hide video
 - proper frame count
   button to count frames
 - cancel button  
 - slit location entry
-- vertical slits
+- horizontal slits

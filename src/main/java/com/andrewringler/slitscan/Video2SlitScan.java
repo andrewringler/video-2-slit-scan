@@ -66,12 +66,7 @@ public class Video2SlitScan extends PApplet {
 		ui = new UserInterface(this);
 		slitLocations = new SlitLocations(this, ui, 0.5f);
 		
-		// on a Mac?
-		String home = System.getProperty("user.home");
-		if (new File(home + "/Desktop").exists()) {
-			outputFile = new File(home + "/Desktop/" + year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan.tif");
-			ui.outputFileSelected(outputFile.getAbsolutePath());
-		}
+		setNewOutputFile();
 	}
 	
 	public void outputFileSelector() {
@@ -175,6 +170,9 @@ public class Video2SlitScan extends PApplet {
 			ui.updatePlayhead(previewFrameTimecode);
 			if (tiffUpdater.isDone()) {
 				generatingSlitScanImage = false;
+				
+				/* pick a new file so we don't overwrite it */
+				setNewOutputFile();
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
 			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > 0.1) {
@@ -252,6 +250,15 @@ public class Video2SlitScan extends PApplet {
 			slit.copy(video, slitX, 0, slit.width, video.height, 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
+		}
+	}
+	
+	private void setNewOutputFile() {
+		// on a Mac?
+		String home = System.getProperty("user.home");
+		if (new File(home + "/Desktop").exists()) {
+			outputFile = new File(home + "/Desktop/" + year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan.tif");
+			ui.outputFileSelected(outputFile.getAbsolutePath());
 		}
 	}
 	
