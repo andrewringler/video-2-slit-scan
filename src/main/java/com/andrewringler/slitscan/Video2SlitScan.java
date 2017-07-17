@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
 
+import com.andrewringler.slitscan.UserInterface.PreviewMode;
+
 import io.scif.SCIFIO;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageWriterSpi;
@@ -141,7 +143,7 @@ public class Video2SlitScan extends PApplet {
 			if (ui.previewModeFrame()) {
 				// fit video in our window
 				image(previewFrame, 0, 0, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
-			} else {
+			} else if (ui.previewModeSlit()) {
 				float positionInVideo = previewFrameTimecode / video.duration();
 				float slitLocationNormalized = slitLocations.getSlitLocationNormalized(positionInVideo);
 				int slitLocationInPreviewFrame = (int) round(previewFrame.width * slitLocationNormalized);
@@ -206,9 +208,12 @@ public class Video2SlitScan extends PApplet {
 		
 		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
 			float scalingFactor = video.width > 640 ? (float) video.width / 640f : 1f;
-			previewFrame = createImage((int) (video.width / scalingFactor), (int) (video.height / scalingFactor), RGB);
 			previewFrameTimecode = video.time();
-			updatePreviewFrame();
+			/* skip preview frame generation for performance */
+			if (!ui.previewMode().equals(PreviewMode.NONE)) {
+				previewFrame = createImage((int) (video.width / scalingFactor), (int) (video.height / scalingFactor), RGB);
+				updatePreviewFrame();
+			}
 			lastDrawUpdate = millis();
 		}
 		
