@@ -63,7 +63,7 @@ public class UserInterface {
 		videoFileLabel = cp5.addTextfield("videoFileTextField").setLabel("Video File Path").setPosition(10, 40).setSize(350, 20).setGroup(videoSettingsUI);
 		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("0").setInputFilter(ControlP5.FLOAT).setPosition(10, 95).setSize(60, 20).setUserInteraction(false).setAutoClear(false).setGroup(videoSettingsUI);
 		videoFrameCountField = cp5.addTextfield("videoFileFrameCount").setLabel("Total Frames").setValue("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setPosition(160, 95).setSize(60, 20).setGroup(videoSettingsUI);
-		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("30").setPosition(100, 95).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI);
+		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("29.97").setPosition(100, 95).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI);
 		videoFPSField.onChange(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
