@@ -76,7 +76,7 @@ public class UserInterface {
 		
 		// Slit scan setup/run
 		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 230).setBackgroundHeight(350).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
-		cp5.addTextlabel("playSpeedLabel").setText("Play Speed").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
+		cp5.addTextlabel("playSpeedLabel").setText("Play Speed (use preview mode none with 2x,4x,8x)").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
 		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
 		playSpeed.activate(0);
 		
@@ -145,7 +145,7 @@ public class UserInterface {
 		imageHeightField = cp5.addTextfield("imageHeightField").setLabel("Height").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(false).setPosition(240, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		
 		cp5.addTextlabel("previewModeLabel").setText("Preview Mode").setPosition(6, 170).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
-		choosePreviewMode = cp5.addRadioButton("choosePreviewMode").setPosition(10, 185).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Frame", 1).addItem("Slit", 2).setGroup(slitGenerationUI);
+		choosePreviewMode = cp5.addRadioButton("choosePreviewMode").setPosition(10, 185).setNoneSelectedAllowed(true).setItemsPerRow(3).setSpacingColumn(50).addItem("Frame", 1).addItem("Slit", 2).addItem("None", 3).setGroup(slitGenerationUI);
 		choosePreviewMode.activate(0);
 		
 		cp5.addTextlabel("slitSelectionModeLabel").setText("Slit Location").setPosition(6, 200).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
@@ -244,12 +244,28 @@ public class UserInterface {
 		return 1;
 	}
 	
+	public enum PreviewMode {
+		FRAME,
+		SLIT,
+		NONE;
+	}
+	
 	public boolean previewModeFrame() {
+		return previewMode().equals(PreviewMode.FRAME);
+	}
+	
+	public boolean previewModeSlit() {
+		return previewMode().equals(PreviewMode.SLIT);
+	}
+	
+	public PreviewMode previewMode() {
 		int previewModeI = (int) choosePreviewMode.getValue();
 		if (previewModeI == 1) {
-			return true;
+			return PreviewMode.FRAME;
+		} else if (previewModeI == 2) {
+			return PreviewMode.SLIT;
 		}
-		return false;
+		return PreviewMode.NONE;
 	}
 	
 	public boolean slitLocationFixed() {
