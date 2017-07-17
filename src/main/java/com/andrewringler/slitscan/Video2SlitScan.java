@@ -60,7 +60,7 @@ public class Video2SlitScan extends PApplet {
 	public void setup() {
 		// TODO still need to deal with moving scrubber
 		// if we want to allow resizing window
-		//		surface.setResizable(true);
+		//surface.setResizable(true);
 		background(0);
 		
 		ui = new UserInterface(this);
@@ -218,6 +218,7 @@ public class Video2SlitScan extends PApplet {
 			loadingFirstFrame = false;
 			doPause = true;
 			ui.setVideoDuration(video.duration());
+			println("video is [", video.width, "x", video.height, "], preview frame is [", previewFrame.width, "x", previewFrame.height, "]");
 		}
 		
 		if (initSlit) {
