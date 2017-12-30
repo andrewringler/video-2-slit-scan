@@ -4,6 +4,7 @@ plugins {
 
 macAppBundle {
     mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+    icon = "doc/icon.icns"
     bundleJRE = true
     javaProperties.put("apple.laf.useScreenMenuBar", "false")
     backgroundImage = "doc/macbackground.png"
