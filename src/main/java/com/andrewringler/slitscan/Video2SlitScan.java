@@ -123,6 +123,7 @@ public class Video2SlitScan extends PApplet {
 		if (!generatingSlitScanImage) {
 			if (video != null && outputFile != null) {
 				generatingSlitScanImage = true;
+				ui.startGeneratingSlitScan();
 				initSlit = true;
 				
 				video.speed(ui.getPlaySpeed());
@@ -172,6 +173,7 @@ public class Video2SlitScan extends PApplet {
 			ui.updatePlayhead(previewFrameTimecode);
 			if (tiffUpdater.isDone()) {
 				generatingSlitScanImage = false;
+				ui.doneGeneratingSlitScan();
 				
 				/* pick a new file so we don't overwrite it */
 				setNewOutputFile();
