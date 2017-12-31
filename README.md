@@ -18,8 +18,8 @@ Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provid
  * Create moving slits over time by specifying keyframes to interpolate between.
  * **Performance**. *Video-2-Slit-Scan* Should support very large input videos and very large output images. Videos are streamed in as needed, output images are not stored in memory but instead written to disk in chunks. *This allow allows previewing the output image using your OS image viewer during generation.*
 
-## Background: Slit-scan Imaging
-Slit-scan photography, imaging and cinematography has a long history. This app allows you to experiment with one slit-scan technique digitally (converting video to a single image). This app was originally commissioned by [Jan Kubasiewicz](http://jankuba.com/). I have since released it as open source.
+## Background
+Slit-scan photography, imaging and cinematography have a long history in film and digitally. This app allows you to experiment with one slit-scan technique digitally (converting a video to a single image). This app was originally commissioned by [Jan Kubasiewicz](http://jankuba.com/) who has created many beautiful works exploring various slit-scan techniques.
 
 ## Developer Notes
 ### New Developer Setup
