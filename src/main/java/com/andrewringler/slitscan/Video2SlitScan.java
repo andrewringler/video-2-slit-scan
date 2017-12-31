@@ -376,8 +376,9 @@ public class Video2SlitScan extends PApplet {
 		generatingSlitScanImage = false;
 		scifio.getContext().dispose();
 		if (video != null) {
-			video.dispose();
+			video.stop();
 		}
+		video = null;
 		fileWritingExecutor.shutdown();
 	}
 	
