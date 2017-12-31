@@ -3,7 +3,7 @@ Video-2-Slit-Scan is an desktop application to create a single (high resolution)
 
 Download the latest build for [Mac](https://github.com/andrewringler/video-2-slit-scan/releases/latest). Video-2-Slit-Scan should also easily run on Windows and Linux, but I have not created and tested a build yet.
 
-![app screenshot](documentation/Screen Shot 2017-12-30 at 10.21.30 PM.png)
+![app screenshot](documentation/ScreenShot2017-12-30.png)
 
 ## Build Mac Bundle:
 gradle createDmg
