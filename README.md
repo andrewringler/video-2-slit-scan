@@ -1,5 +1,5 @@
 # Video-2-Slit-Scan
-Video-2-Slit-Scan is an desktop application to create a single (high resolution) static image from slits of video.
+Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provides a graphical interface for adjusting slit position and size. Video-2-Slit-Scan can support very large videos with modest RAM since it streams in the input video and writes out the output image to disk in chunks.
 
 ## Install
 **macOS** Download the [latest macOS build](https://github.com/andrewringler/video-2-slit-scan/releases/latest)
