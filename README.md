@@ -13,7 +13,7 @@ Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provid
  * Click `Generate Slit-Scan Image`, a slit-scan image with default settings will saved to your Desktop
 
 ## Screenshots
-![app screenshot](documentation/ScreenShot2017-12-30.jpg)
+![app screenshot](documentation/ScreenShot2017-12-30Glacier.jpg)
 
 ![app screenshot](documentation/ScreenShot2017-06-21.jpg)
 
