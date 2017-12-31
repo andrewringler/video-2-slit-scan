@@ -30,11 +30,14 @@ public class Video2SlitScan extends PApplet {
 	PImage previewFrame;
 	int lastDrawUpdate = 0;
 	boolean loadingFirstFrame = false;
+	boolean isPausedGeneratingSlice = false;
 	boolean doPause = false;
+	boolean doResume = false;
 	private float previewFrameTimecode = 0;
 	
 	// Slit generation
 	boolean generatingSlitScanImage = false;
+	boolean generatingSlicePause = false;
 	boolean initSlit = false;
 	SlitLocations slitLocations;
 	
@@ -129,10 +132,25 @@ public class Video2SlitScan extends PApplet {
 				video.speed(ui.getPlaySpeed());
 				video.jump(0);
 				video.play();
+				previewFrameTimecode = 0;
 			} else {
 				println("no video loaded!");
 			}
 		}
+	}
+	
+	public void doPauseGeneratingSlice() {
+		isPausedGeneratingSlice = true;
+		doPause = true;
+	}
+	
+	public void doResumeGeneratingSlice() {
+		isPausedGeneratingSlice = false;
+		doResume = true;
+	}
+	
+	public boolean isPausedGeneratingSlice() {
+		return isPausedGeneratingSlice;
 	}
 	
 	public void draw() {
@@ -168,7 +186,13 @@ public class Video2SlitScan extends PApplet {
 			doPause = false;
 		}
 		
-		if (generatingSlitScanImage) {
+		if (doResume && video != null && generatingSlitScanImage) {
+			// resume after pause
+			video.play();
+			doResume = true;
+		}
+		
+		if (generatingSlitScanImage && !initSlit) {
 			ui.updateProgress(tiffUpdater.getProgress() * 100f);
 			ui.updatePlayhead(previewFrameTimecode);
 			if (tiffUpdater.isDone()) {

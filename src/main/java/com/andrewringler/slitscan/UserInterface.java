@@ -33,6 +33,7 @@ public class UserInterface {
 	private final Button selectVideoFile;
 	private final Button selectOutputFile;
 	private final Button generateSlitScanImageButton;
+	private final Button pauseGenerateSlitScanImageButton;
 	private final RadioButton choosePreviewMode;
 	private final Slider videoScrubber;
 	private final RadioButton slitSelectionMode;
@@ -166,6 +167,20 @@ public class UserInterface {
 			public void controlEvent(CallbackEvent arg0) {
 				if (!p.generatingSlitScanImage) {
 					p.generateSlitScan();
+				}
+			}
+		});
+		pauseGenerateSlitScanImageButton = cp5.addButton("pauseGenerateSlitScanImageButton").setLabel("Pause").setPosition(220, 300).setSize(70, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
+			@Override
+			public void controlEvent(CallbackEvent arg0) {
+				if (p.generatingSlitScanImage) {
+					if (p.isPausedGeneratingSlice()) {
+						pauseGenerateSlitScanImageButton.setLabel("Pause");
+						p.doResumeGeneratingSlice();
+					} else {
+						pauseGenerateSlitScanImageButton.setLabel("Resume");
+						p.doPauseGeneratingSlice();
+					}
 				}
 			}
 		});
@@ -376,6 +391,7 @@ public class UserInterface {
 		imageHeightField.setUserInteraction(false);
 		generateSlitScanImageButton.setLock(true);
 		videoScrubber.setUserInteraction(false);
+		//		pauseGenerateSlitScanImageButton.setLock(false);
 	}
 	
 	public void doneGeneratingSlitScan() {
@@ -392,6 +408,7 @@ public class UserInterface {
 		imageHeightField.setUserInteraction(true);
 		generateSlitScanImageButton.setLock(false);
 		videoScrubber.setUserInteraction(true);
+		//		pauseGenerateSlitScanImageButton.setLock(true);
 	}
 	
 	// adapted from
