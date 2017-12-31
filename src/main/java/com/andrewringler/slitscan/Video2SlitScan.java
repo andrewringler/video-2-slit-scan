@@ -199,10 +199,16 @@ public class Video2SlitScan extends PApplet {
 	
 	public void mousePressed() {
 		slitLocations.mousePressed();
+		ui.mousePressed();
 	}
 	
 	public void mouseReleased() {
 		slitLocations.mouseReleased();
+		ui.mouseReleased();
+	}
+	
+	public void keyPressed() {
+		ui.keyPressed();
 	}
 	
 	public void movieEvent(Movie m) {
