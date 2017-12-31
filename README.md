@@ -1,6 +1,8 @@
 # Video-2-Slit-Scan
 Video-2-Slit-Scan is an desktop application to create a single (high resolution) static image from slits of video.
 
+Download the latest build for [Mac](https://github.com/andrewringler/video-2-slit-scan/releases/latest). Video-2-Slit-Scan should also easily run on Windows and Linux, but I have not created and tested a build yet.
+
 ## Build Mac Bundle:
 gradle createDmg
 
