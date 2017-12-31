@@ -1,6 +1,12 @@
-- hide video
 - proper frame count
   button to count frames
 - cancel button  
 - slit location entry
 - horizontal slits
+- style disabled buttons and fields better
+- more consistent hover colors
+
+
+
+** done
+- hide video

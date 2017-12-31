@@ -1,6 +1,6 @@
 package com.andrewringler.slitscan;
 
-import java.io.File;
+import java.util.List;
 
 import controlP5.Button;
 import controlP5.CColor;
@@ -8,10 +8,12 @@ import controlP5.CallbackEvent;
 import controlP5.CallbackListener;
 import controlP5.ControlFont;
 import controlP5.ControlP5;
+import controlP5.ControllerInterface;
 import controlP5.Group;
 import controlP5.RadioButton;
 import controlP5.Slider;
 import controlP5.Textfield;
+import processing.core.PConstants;
 import processing.core.PFont;
 
 public class UserInterface {
@@ -91,14 +93,14 @@ public class UserInterface {
 				}
 			}
 		});
-		outputFileLabel = cp5.addTextfield("outputFileLabel").setLabel("Output File Path").setPosition(10, 70).setSize(350, 20).setAutoClear(false).setGroup(slitGenerationUI);
-		outputFileLabel.onChange(new CallbackListener() {
-			@Override
-			public void controlEvent(CallbackEvent theEvent) {
-				// verify
-				p.outputFileSelected(new File(outputFileLabel.getText()));
-			}
-		});
+		outputFileLabel = cp5.addTextfield("outputFileLabel").setLabel("Output File Path").setPosition(10, 70).setSize(350, 20).setAutoClear(false).setGroup(slitGenerationUI).setUserInteraction(false);
+		//		outputFileLabel.onChange(new CallbackListener() {
+		//			@Override
+		//			public void controlEvent(CallbackEvent theEvent) {
+		//				// verify
+		//				p.outputFileSelected(new File(outputFileLabel.getText()));
+		//			}
+		//		});
 		
 		startPixelField = cp5.addTextfield("startFrameField").setLabel("Start Pixel").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setPosition(10, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		startPixelField.onChange(new CallbackListener() {
@@ -230,10 +232,14 @@ public class UserInterface {
 			startPixelField.setText(String.valueOf(frameCount - slitWidth));
 		}
 		imageWidthField.setText(String.valueOf(frameCount * slitWidth));
-		imageHeightField.setText(String.valueOf(p.video.height));
+		if (p.video != null) {
+			imageHeightField.setText(String.valueOf(p.video.height));
+		}
 		
 		videoScrubber.setValue(0);
-		videoScrubber.setRange(0, p.video.duration());
+		if (p.video != null) {
+			videoScrubber.setRange(0, p.video.duration());
+		}
 	}
 	
 	public Integer getStartingPixel() {
@@ -386,5 +392,53 @@ public class UserInterface {
 		imageHeightField.setUserInteraction(true);
 		generateSlitScanImageButton.setLock(false);
 		videoScrubber.setUserInteraction(true);
+	}
+	
+	// adapted from
+	// https://forum.processing.org/one/topic/controlp5-smart-textfields.html
+	Textfield currentFocusedTf;
+	Textfield previousFocusedTf;
+	
+	public void mouseReleased() {
+		List<ControllerInterface<?>> ctrl = cp5.getAll();
+		previousFocusedTf = currentFocusedTf;
+		currentFocusedTf = null;
+		for (ControllerInterface<?> ct : ctrl) {
+			if (ct instanceof Textfield) {
+				Textfield tf = (Textfield) ct;
+				if (tf.isFocus() && tf.isUserInteraction()) {
+					currentFocusedTf = tf;
+					return;
+				}
+			}
+		}
+	}
+	
+	public void mousePressed() {
+		if (currentFocusedTf != null && currentFocusedTf.isUserInteraction()) {
+			if (currentFocusedTf.getText().length() <= 0) {
+				//
+			} else {
+				currentFocusedTf.submit();
+			}
+		} else if (previousFocusedTf != null && previousFocusedTf.isUserInteraction()) {
+			previousFocusedTf.submit();
+		}
+	}
+	
+	public void keyPressed() {
+		if (p.keyCode == PConstants.TAB) {
+			// lose focus of UI element on tab and submit it
+			if (currentFocusedTf != null) {
+				currentFocusedTf.setFocus(false);
+				if (currentFocusedTf != null && currentFocusedTf.isUserInteraction()) {
+					if (currentFocusedTf.getText().length() <= 0) {
+						//
+					} else {
+						currentFocusedTf.submit();
+					}
+				}
+			}
+		}
 	}
 }
