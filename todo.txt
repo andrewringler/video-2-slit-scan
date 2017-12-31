@@ -1,12 +1,16 @@
 - proper frame count
   button to count frames
-- cancel button  
 - slit location entry
 - horizontal slits
 - style disabled buttons and fields better
 - more consistent hover colors
+- pause/resume button hard to hit, possible issue with ControlP5 not
+  getting enough thread time?
+
 
 
 
 ** done
+- pause/resume button during slit generation  
+- better submit behavior on lose focus of text fields
 - hide video
