@@ -43,7 +43,6 @@ public class UserInterface {
 	private float videoDrawWidth = 0;
 	private float videoDrawHeight = 0;
 	private int videoWidth = 0;
-	private int videoHeight = 0;
 	private boolean scrubbing = false;
 	private int videoScrubberYOffset;
 	public PFont robotoMono;
@@ -310,7 +309,6 @@ public class UserInterface {
 	
 	public void updateVideoDrawDimesions(int previewFrameWidth, int previewFrameHeight, int videoWidth, int videoHeight) {
 		this.videoWidth = videoWidth;
-		this.videoHeight = videoHeight;
 		float scalingFactor = previewFrameWidth < p.width ? (float) p.width / (float) previewFrameWidth : 1f;
 		float newVideoDrawWidth = previewFrameWidth * scalingFactor;
 		float newVideoDrawHeight = previewFrameHeight * scalingFactor;
