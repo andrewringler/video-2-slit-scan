@@ -12,6 +12,9 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
 
 import io.scif.SCIFIO;
@@ -23,6 +26,8 @@ import processing.opengl.PGraphics2D;
 import processing.video.Movie;
 
 public class Video2SlitScan extends PApplet {
+	private static final Logger LOG = LoggerFactory.getLogger(Video2SlitScan.class);
+	
 	// Video
 	Movie video;
 	File videoFileName = null;
@@ -50,7 +55,7 @@ public class Video2SlitScan extends PApplet {
 	
 	public Video2SlitScan() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
-		
+		LOG.info("video-2-slit-scan launched");
 		// register SCIFIO TIFF readers and writers for use with Java ImageIO
 		scifio = new SCIFIO();
 		IIORegistry.getDefaultInstance().registerServiceProvider(new TIFFImageWriterSpi());
@@ -84,12 +89,12 @@ public class Video2SlitScan extends PApplet {
 	
 	public void outputFileSelected(File selection) {
 		if (selection == null) {
-			println("Window was closed or the user hit cancel.");
+			LOG.info("output file selection dialog: windows was closed or user hit cancel");
 		} else {
 			if (selection.getAbsolutePath().endsWith(".tif")) {
 				outputFile = selection;
 			} else {
-				println("invalid file " + selection.getAbsolutePath());
+				LOG.info("output file selection dialog: invalid file selected");
 				// not updating outputFile
 			}
 			ui.outputFileSelected(outputFile.getAbsolutePath());
@@ -102,13 +107,12 @@ public class Video2SlitScan extends PApplet {
 	
 	public void videoFileSelected(File selection) {
 		if (selection == null) {
-			println("Window was closed or the user hit cancel.");
+			LOG.info("video file selection: window was closed or user hit cancel");
 		} else {
 			videoFileName = selection;
-			println("user selected " + videoFileName.getAbsolutePath());
 			ui.videoFileSelected(videoFileName.getAbsolutePath());
 			
-			println("setting up video " + videoFileName.getAbsolutePath());
+			LOG.info("video file selection: loading video '" + videoFileName.getAbsolutePath() + "'");
 			video = new Movie(this, videoFileName.getAbsolutePath());
 			
 			if (video != null) {
@@ -116,8 +120,7 @@ public class Video2SlitScan extends PApplet {
 				video.volume(0);
 				video.play();
 			} else {
-				println("Unable to load video file: " + videoFileName.getAbsolutePath());
-				exit();
+				LOG.error("video file selection: unable to load video '" + videoFileName.getAbsolutePath() + "'");
 			}
 		}
 	}
@@ -134,7 +137,7 @@ public class Video2SlitScan extends PApplet {
 				video.play();
 				previewFrameTimecode = 0;
 			} else {
-				println("no video loaded!");
+				LOG.info("cannot generate slit scan: no video loaded");
 			}
 		}
 	}
@@ -253,7 +256,7 @@ public class Video2SlitScan extends PApplet {
 			loadingFirstFrame = false;
 			doPause = true;
 			ui.setVideoDuration(video.duration());
-			println("video is [", video.width, "x", video.height, "], preview frame is [", previewFrame.width, "x", previewFrame.height, "]");
+			LOG.info("video is [", video.width, "x", video.height, "], preview frame is [", previewFrame.width, "x", previewFrame.height, "]");
 		}
 		
 		if (initSlit) {
@@ -373,6 +376,8 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	private void cleanup() {
+		LOG.info("video-2-slit-scan quiting");
+		
 		generatingSlitScanImage = false;
 		scifio.getContext().dispose();
 		if (video != null) {
@@ -383,7 +388,6 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void dispose() {
-		println("dispose");
 		cleanup();
 	}
 	
