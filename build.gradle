@@ -20,7 +20,7 @@ applicationDefaultJvmArgs = ["-Xmx512M"]
 mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
 
 group = 'com.andrewringler.slitscan'
-version = '0.2'
+version = '0.2.1'
 
 repositories {
     flatDir {
