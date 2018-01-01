@@ -5,7 +5,12 @@ import static processing.core.PApplet.round;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SlitLocations {
+	private static final Logger LOG = LoggerFactory.getLogger(SlitLocations.class);
+	
 	private final Video2SlitScan p;
 	private final UserInterface ui;
 	private final ConcurrentSkipListSet<SlitLocationKeyframe> slitLocations = new ConcurrentSkipListSet<SlitLocationKeyframe>();
@@ -173,7 +178,8 @@ public class SlitLocations {
 		}
 		
 		if (left == null || right == null) {
-			System.out.println(left + " " + right + " all: " + slitLocations);
+			LOG.error("unable to get slit location for position " + positionInVideo + " left: " + left + ", right:" + right + " all: " + slitLocations);
+			return slitLocationUI;
 		}
 		
 		return map(positionInVideo, left.getPositionInVideo(), right.getPositionInVideo(), left.getLocationInFrame(), right.getLocationInFrame());

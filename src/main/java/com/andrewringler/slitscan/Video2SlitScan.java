@@ -113,6 +113,15 @@ public class Video2SlitScan extends PApplet {
 			ui.videoFileSelected(videoFileName.getAbsolutePath());
 			
 			LOG.info("video file selection: loading video '" + videoFileName.getAbsolutePath() + "'");
+			// reset keyframes
+			slitLocations = new SlitLocations(this, ui, 0.5f);
+			
+			if (video != null) {
+				// cleanup old video
+				video.stop();
+				video.dispose();
+				video = null;
+			}
 			video = new Movie(this, videoFileName.getAbsolutePath());
 			
 			if (video != null) {
@@ -256,7 +265,7 @@ public class Video2SlitScan extends PApplet {
 			loadingFirstFrame = false;
 			doPause = true;
 			ui.setVideoDuration(video.duration());
-			LOG.info("video is [", video.width, "x", video.height, "], preview frame is [", previewFrame.width, "x", previewFrame.height, "]");
+			LOG.info("video is [" + video.width + "x" + video.height + "], preview frame is [" + previewFrame.width + "x" + previewFrame.height, "]");
 		}
 		
 		if (initSlit) {
