@@ -23,10 +23,12 @@ import io.scif.media.imageioimpl.plugins.tiff.TIFFImageWriterSpi;
 import processing.core.PApplet;
 import processing.core.PImage;
 import processing.opengl.PGraphics2D;
+import processing.opengl.PJOGL;
 import processing.video.Movie;
 
 public class Video2SlitScan extends PApplet {
 	private static final Logger LOG = LoggerFactory.getLogger(Video2SlitScan.class);
+	private static final String APP_NAME = "Video-2-Slit-Scan";
 	
 	// Video
 	Movie video;
@@ -61,6 +63,11 @@ public class Video2SlitScan extends PApplet {
 		IIORegistry.getDefaultInstance().registerServiceProvider(new TIFFImageWriterSpi());
 		IIORegistry.getDefaultInstance().registerServiceProvider(new TIFFImageReaderSpi());
 		ImageIO.scanForPlugins();
+		
+		// Set App icon
+		// 16, 32, 48, 64, 128, 256, 512
+		// PSurfaceJOGL.java loads these in order
+		PJOGL.setIcon("icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png");
 	}
 	
 	public void settings() {
@@ -72,6 +79,8 @@ public class Video2SlitScan extends PApplet {
 		// if we want to allow resizing window
 		//surface.setResizable(true);
 		background(0);
+		
+		surface.setTitle(APP_NAME);
 		
 		ui = new UserInterface(this);
 		slitLocations = new SlitLocations(this, ui, 0.5f);
@@ -400,23 +409,27 @@ public class Video2SlitScan extends PApplet {
 		cleanup();
 	}
 	
-	//	// need to override exit() method when using Processing from eclipse
-	//	// https://forum.processing.org/two/discussion/22292/solved-javaw-process-wont-close-after-the-exit-of-my-program-eclipse
-	//	public void exit() {
-	//		println("exit");
-	//		cleanup();
-	//		
-	//		noLoop();
-	//		
-	//		// Perform any code you like but some libraries like minim 
-	//		//need to be stopped manually. If so do that here.
-	//		
-	//		// Now call the overridden method. Since the sketch is no longer looping
-	//		// it will call System.exit(0); for you
-	//		super.exit();
-	//	}
+	// need to override exit() method when using Processing from eclipse
+	// https://forum.processing.org/two/discussion/22292/solved-javaw-process-wont-close-after-the-exit-of-my-program-eclipse
+	public void exit() {
+		println("exit");
+		cleanup();
+		
+		noLoop();
+		
+		// Perform any code you like but some libraries like minim 
+		//need to be stopped manually. If so do that here.
+		
+		// Now call the overridden method. Since the sketch is no longer looping
+		// it will call System.exit(0); for you
+		super.exit();
+	}
 	
 	public static void main(String args[]) {
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", APP_NAME);
+		System.setProperty("apple.awt.application.name", APP_NAME);
+		
 		// https://processing.org/tutorials/eclipse/
 		PApplet.main(new String[] { "--bgcolor=#000000", Video2SlitScan.class.getCanonicalName() });
 	}
