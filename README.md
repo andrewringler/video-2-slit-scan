@@ -34,9 +34,9 @@ Slit-scan photography, imaging and cinematography have a long history in film an
  * run after-pull.sh
  * Import Project Into Eclipse
  
-### Build Mac Bundle:
-gradle createDmg
-
+### Build Installers:
+    gradle createDmg
+    gradle createExe
 
 ### Create App Icon
  * Create PNG image 1024x1024
