@@ -40,8 +40,10 @@ Slit-scan photography, imaging and cinematography have a long history in film an
 ### Build Installers:
     gradle createDmg
     gradle createExe
+    gradle distTar
 
-### Create App Icon
+### Create App Icons
+#### Mac
  * Create PNG image 1024x1024
  * Convert to iconset folder with [Icon Generator](https://github.com/onmyway133/IconGenerator)
  * Tweak individual icons if need be
@@ -50,4 +52,9 @@ Slit-scan photography, imaging and cinematography have a long history in film an
  * Convert to icns file with
  `iconutil -c icns -o icon.icns icon.iconset`
   then copy into icon.icns into the doc/ directory
+  
+#### Windows
+ * Create PNG images (see [windows docs](https://msdn.microsoft.com/en-us/library/windows/desktop/dn742485%28v=vs.85%29.aspx) for latest sizes), currently 16,32,48,256
+ * Convert to .ico using ImageMagick `convert icon-16.png icon-32.png icon-48.png icon-256.png icon.ico`
+ * Copy .ico file to doc/ directory
   
