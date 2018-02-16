@@ -1,7 +1,8 @@
 plugins {
   id 'java'
   id "edu.sc.seis.macAppBundle" version "2.2.1"
-  id "edu.sc.seis.launch4j" version "2.4.2"
+  id "edu.sc.seis.launch4j" version "2.4.3"
+  id 'application'
 }
 
 macAppBundle {
@@ -15,10 +16,12 @@ macAppBundle {
 }
 launch4j {
     mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+    icon = "${projectDir}/doc/icon.ico"
+    windowTitle = "Video-2-Slit-Scan"
 }
 
 apply plugin: 'eclipse'
-apply plugin:'application'
+apply plugin: 'application'
 apply plugin: 'edu.sc.seis.launch4j'
 
 sourceCompatibility = '1.8'
@@ -73,3 +76,37 @@ task copySlitScanNatives {
 	}
 }
 createApp.finalizedBy copySlitScanNatives
+
+task zipUpWindows(type: Zip) {
+   from "${-> project.buildDir}/${-> launch4j.outputDir}"
+   include '*'
+   include '*/*'
+   archiveName "${-> project.name}-${-> project.version}-windows.zip" 
+}
+task copySlitScanNativesWindows {
+	outputs.upToDateWhen { false }
+	
+	doLast {
+		Copy myCopy = task(myCopy, type: Copy)
+		myCopy.from 'lib/p3-video'
+		myCopy.into "${-> project.buildDir}/${-> launch4j.outputDir}/${-> launch4j.libraryDir}"
+		myCopy.execute()
+		
+		zipUpWindows.execute()
+	}
+}
+createExe.finalizedBy copySlitScanNativesWindows
+
+// for Application plugin (Linux and script for version for Win/Mac)
+distributions {
+    main {
+        contents {
+            from(file('lib/p3-video')) {
+                into 'lib'
+            }
+            from(file('data')) {
+                into 'bin/data'
+            }
+        }
+    }
+}
