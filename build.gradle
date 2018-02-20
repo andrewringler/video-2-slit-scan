@@ -135,8 +135,11 @@ distributions {
                 into 'lib'
             }
             from('data') {
-                into 'bin/data'
+                into 'data'
             }
         }
     }
+}
+tasks.withType(Tar){
+    compression = Compression.GZIP
 }

@@ -42,9 +42,13 @@ Slit-scan photography, imaging and cinematography have a long history in film an
     gradle createExe
     gradle distTar
     
-Debug Windows build. To get additional JVM logging, launch Video-2-Slit-Scan from the Command Prompt. This will generate an extra launch4j log file with uncaught Runtime Exceptions.
+#### Debug Windows build.
+To get additional JVM logging, launch Video-2-Slit-Scan from the Command Prompt with l4j flag. This will generate an extra launch4j log file with uncaught Runtime Exceptions.
 
     video-2-slit-scan.exe --l4j-debug-all
+    
+#### Debug Mac build.
+To get additional logging, control-click on application icon, click `Show Package Contents`, browse to Contents > MacOS and double-click `JavaAppLauncher`. Logging will show up in the `Terminal` window.
 
 
 ### Create App Icons
