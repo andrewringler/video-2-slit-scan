@@ -35,10 +35,17 @@
     </encoder>
   </appender>
   
+  <appender name="syslog" class="ch.qos.logback.classic.net.SyslogAppender">
+    <syslogHost>localhost</syslogHost>
+    <facility>USER</facility>
+    <suffixPattern>%logger{1} - %m%n</suffixPattern>
+  </appender>
+  
   <root level="INFO">
     <appender-ref ref="stdout"/>
     <appender-ref ref="file"/>
     <appender-ref ref="fileDebug"/>
+    <appender-ref ref="syslog"/>
   </root>
   
 </configuration>
