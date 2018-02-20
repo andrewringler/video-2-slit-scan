@@ -35,11 +35,13 @@ See [all Releases and Release Notes](https://github.com/andrewringler/video-2-sl
  * Given an input video, create a single output TIF grabbing a single vertical slice from each frame
  * Adjust position and size of slit
  * Manually adjust slit position as video plays
- * Create moving slits over time by specifying keyframes to interpolate between.
- * **Performance**. *Video-2-Slit-Scan* Should support very large input videos and very large output images. Videos are streamed in as needed, output images are not stored in memory but instead written to disk in chunks. *This allow allows previewing the output image using your OS image viewer during generation.*
+ * Create moving slits over time by specifying slit position at keyframes and interpolating between keyframes over time
+ * **Performance**. *Video-2-Slit-Scan* Should support very large input videos and very large output images. Videos are streamed in as needed, output images are not stored entirely in memory, but instead written to disk in small chunks. *NOTE, that this allow allows previewing the output image using your OS image viewer during generation.*
 
 ## Background
-Slit-scan photography, imaging and cinematography have a long history in film and digitally. This app allows you to experiment with one slit-scan technique digitally (converting a video to a single image). This app was originally commissioned by [Jan Kubasiewicz](http://jankuba.com/) who has created many beautiful works exploring various slit-scan techniques.
+[Slit-scan photography](https://en.wikipedia.org/wiki/Slit-scan_photography), imaging and cinematography have a long history in film and digitally. This app allows you to experiment with one slit-scan technique digitally (converting a video to a single image). This app was originally commissioned by [Jan Kubasiewicz](http://jankuba.com/) who has created many beautiful works exploring various slit-scan techniques.
+
+See also [Strip photography](https://en.wikipedia.org/wiki/Strip_photography) for a more technical discussion on various techniques and history. Also known as streak images, streak photography, slit camera and slit scan camera.
 
 ## Developer Notes
 ### New Developer Setup
