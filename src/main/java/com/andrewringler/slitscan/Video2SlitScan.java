@@ -2,7 +2,10 @@ package com.andrewringler.slitscan;
 
 import static com.andrewringler.slitscan.StreamingImageTools.createBlankImage;
 
+import java.awt.Image;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
+import javax.swing.ImageIcon;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +33,7 @@ import processing.video.Movie;
 public class Video2SlitScan extends PApplet {
 	private static final Logger LOG = LoggerFactory.getLogger(Video2SlitScan.class);
 	private static final String APP_NAME = "Video-2-Slit-Scan";
+	private static final String[] APP_ICON_FILENAMES = { "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png" };
 	
 	// Video
 	Movie video;
@@ -64,10 +69,10 @@ public class Video2SlitScan extends PApplet {
 		IIORegistry.getDefaultInstance().registerServiceProvider(new TIFFImageReaderSpi());
 		ImageIO.scanForPlugins();
 		
-		// Set App icon
+		// Set App icons for Mac
 		// 16, 32, 48, 64, 128, 256, 512
 		// PSurfaceJOGL.java loads these in order
-		PJOGL.setIcon("icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png");
+		PJOGL.setIcon(APP_ICON_FILENAMES);
 	}
 	
 	public void settings() {
@@ -75,6 +80,14 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void setup() {
+		// Add Windows Icons
+		// task-switcher, titlebar
+		List<Image> appIconImages = new ArrayList<Image>();
+		for (String appIconFilename : APP_ICON_FILENAMES) {
+			appIconImages.add(new ImageIcon(loadBytes(appIconFilename)).getImage());
+		}
+		frame.setIconImages(appIconImages);
+		
 		// TODO still need to deal with moving scrubber
 		// if we want to allow resizing window
 		//surface.setResizable(true);

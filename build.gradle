@@ -58,6 +58,8 @@ dependencies {
 // wrap copy in task for delayed evaluation
 macAppBundle {
     mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+    appName = "Video-2-Slit-Scan"
+    bundleExecutable = "Video-2-Slit-Scan"
     icon = "doc/icon.icns"
     bundleJRE = true
     javaProperties.put("apple.laf.useScreenMenuBar", "false")
@@ -69,10 +71,15 @@ task copySlitScanNatives {
 	outputs.upToDateWhen { false }
 	
 	doLast {
-		Copy myCopy = task(myCopy, type: Copy)
-		myCopy.from 'lib/p3-video'
-		myCopy.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java"
-		myCopy.execute()
+		Copy videoLibs = task(videoLibs, type: Copy)
+		videoLibs.from 'lib/p3-video'
+		videoLibs.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java"
+		videoLibs.execute()
+		
+		Copy data = task(data, type: Copy)
+		data.from 'data'
+		data.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java/data"
+		data.execute()
 	}
 }
 createApp.finalizedBy copySlitScanNatives
@@ -94,6 +101,12 @@ task copySlitScanNativesWindows(type: Copy) {
 	from 'lib/p3-video'
 	into "${-> project.buildDir}/${-> launch4j.outputDir}/${-> launch4j.libraryDir}"
 }
+task copyDataDirWindows(type: Copy) {
+	outputs.upToDateWhen { false }
+	
+	from 'data'
+	into "${-> project.buildDir}/${-> launch4j.outputDir}/data"
+}
 task zipUpWindows(type: Zip) {
 	outputs.upToDateWhen { false }
 
@@ -101,6 +114,7 @@ task zipUpWindows(type: Zip) {
    	archiveName "${-> project.name}-${-> project.version}-windows.zip" 
 }
 zipUpWindows.dependsOn copySlitScanNativesWindows
+zipUpWindows.dependsOn copyDataDirWindows
 createExe.finalizedBy zipUpWindows
 
 
