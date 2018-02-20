@@ -6,9 +6,20 @@ Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provid
 
 ## Quickstart
 ### Install
-**macOS** Download the [latest macOS build](https://github.com/andrewringler/video-2-slit-scan/releases/latest)
+#### macOS
+   * Download [Video-2-Slit-Scan for Mac v0.2.3](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.3/video-2-slit-scan-0.2.3.dmg) (107 mb)
+   * Double-click the downloaded file and drag the `Video-2-Slit-Scan` icon to the Applications folder link
 
-*Video-2-Slit-Scan is written in [Processing](https://processing.org/) / [Java](https://java.com) / [Gradle](https://gradle.org/) / [Eclipse](https://www.eclipse.org/) so should also easily run on Windows and Linux, but I have not created and tested their builds yet.*
+*Tested on macOS Sierra 10.12.6. DMG comes bundled with Java 1.8.0_91.*
+
+#### Windows
+   * Install [Java 8 JRE](https://www.java.com/en/download/manual.jsp) or later. Be sure to install the 64-bit version if you have 64-bit Windows.
+   * Download the [Video-2-Slit-Scan for Windows v0.2.3](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.3/video-2-slit-scan-0.2.3-windows.zip) (49.6 mb)
+
+#### Linux
+*Video-2-Slit-Scan is written in [Processing](https://processing.org/) / [Java](https://java.com) / [Gradle](https://gradle.org/) / [Eclipse](https://www.eclipse.org/) so it should be able to run on Linux, but I have not yet been able to verify it working do to issues with the [Processing Video library](https://github.com/processing/processing-video/issues/86) on arm64.*
+
+See [all Releases and Release Notes](https://github.com/andrewringler/video-2-slit-scan/releases).
 
 ## Usage
  * Launch the App
