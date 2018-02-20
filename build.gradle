@@ -5,21 +5,6 @@ plugins {
   id 'application'
 }
 
-macAppBundle {
-    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
-    icon = "doc/icon.icns"
-    bundleJRE = true
-    javaProperties.put("apple.laf.useScreenMenuBar", "false")
-    backgroundImage = "doc/macbackground.png"
-    backgroundImageWidth = 527
-    backgroundImageHeight = 429
-}
-launch4j {
-    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
-    icon = "${projectDir}/doc/icon.ico"
-    windowTitle = "Video-2-Slit-Scan"
-}
-
 apply plugin: 'eclipse'
 apply plugin: 'application'
 apply plugin: 'edu.sc.seis.launch4j'
@@ -63,8 +48,23 @@ dependencies {
             fileTree(dir: 'lib/p3', include: '**/*.jar')
 }
 
+
+//
+// Mac
+//
+// gradle createDmg
+//
 // the p3-video jars require us to preserve the specific folder structure
 // wrap copy in task for delayed evaluation
+macAppBundle {
+    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+    icon = "doc/icon.icns"
+    bundleJRE = true
+    javaProperties.put("apple.laf.useScreenMenuBar", "false")
+    backgroundImage = "doc/macbackground.png"
+    backgroundImageWidth = 527
+    backgroundImageHeight = 429
+}
 task copySlitScanNatives {
 	outputs.upToDateWhen { false }
 	
@@ -77,34 +77,50 @@ task copySlitScanNatives {
 }
 createApp.finalizedBy copySlitScanNatives
 
-task zipUpWindows(type: Zip) {
-   from "${-> project.buildDir}/${-> launch4j.outputDir}"
-   include '*'
-   include '*/*'
-   archiveName "${-> project.name}-${-> project.version}-windows.zip" 
+
+//
+// Windows
+//
+// gradle createExe
+//
+launch4j {
+    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+    icon = "${projectDir}/doc/icon.ico"
+    windowTitle = "Video-2-Slit-Scan"
 }
-task copySlitScanNativesWindows {
+task copySlitScanNativesWindows(type: Copy) {
 	outputs.upToDateWhen { false }
 	
-	doLast {
-		Copy myCopy = task(myCopy, type: Copy)
-		myCopy.from 'lib/p3-video'
-		myCopy.into "${-> project.buildDir}/${-> launch4j.outputDir}/${-> launch4j.libraryDir}"
-		myCopy.execute()
-		
-		zipUpWindows.execute()
-	}
+	from 'lib/p3-video'
+	into "${-> project.buildDir}/${-> launch4j.outputDir}/${-> launch4j.libraryDir}"
 }
-createExe.finalizedBy copySlitScanNativesWindows
+task zipUpWindows(type: Zip) {
+	outputs.upToDateWhen { false }
 
-// for Application plugin (Linux and script for version for Win/Mac)
+	from "${-> project.buildDir}/${-> launch4j.outputDir}"
+   	archiveName "${-> project.name}-${-> project.version}-windows.zip" 
+}
+zipUpWindows.dependsOn copySlitScanNativesWindows
+createExe.finalizedBy zipUpWindows
+
+
+//
+// Linux
+//
+// gradle distTar
+//
+// for Application/Distributions plugin
+// this is the script only version that should work on Mac/Linux/Win
+// but currently this is the only version we release for Linux
+// Mac and Win have their nicer custom versions with icons and packages
+//
 distributions {
     main {
         contents {
-            from(file('lib/p3-video')) {
+            from('lib/p3-video') {
                 into 'lib'
             }
-            from(file('data')) {
+            from('data') {
                 into 'bin/data'
             }
         }
