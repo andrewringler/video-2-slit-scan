@@ -142,15 +142,16 @@ public class SlitLocations {
 			p.strokeWeight(1);
 			p.stroke(255);
 			int scaledSlitLocation = round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
-			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
+			//			LOG.info("" + scaledSlitLocation + " " + positionInVideo + " " + ui.getVideoDrawWidth());
+			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
 			p.stroke(0);
-			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
+			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
 			
 			if (draggingSlit) {
 				p.stroke(255, 255, 0);
-				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x0300, 1);
+				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
 				p.stroke(0, 255, 0);
-				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, (int) ui.getVideoDrawHeight(), 0x3000, 1);
+				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
 			}
 		}
 	}

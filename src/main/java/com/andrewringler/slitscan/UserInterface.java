@@ -21,6 +21,8 @@ public class UserInterface {
 	private final Video2SlitScan p;
 	private final Textfield videoFileLabel;
 	private final Textfield videoFileDuration;
+	private final Textfield videoFileWidth;
+	private final Textfield videoFileHeight;
 	private final Textfield videoFrameCountField;
 	private final Textfield videoFPSField;
 	private final Slider generationProgressSlider;
@@ -66,8 +68,10 @@ public class UserInterface {
 			}
 		});
 		videoFileLabel = cp5.addTextfield("videoFileTextField").setLabel("Video File Path").setPosition(10, 40).setSize(350, 20).setGroup(videoSettingsUI);
-		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("0").setInputFilter(ControlP5.FLOAT).setPosition(10, 95).setSize(60, 20).setUserInteraction(false).setAutoClear(false).setGroup(videoSettingsUI);
+		videoFileDuration = cp5.addTextfield("videoFileDuration").setLabel("Duration (s)").setValue("1").setInputFilter(ControlP5.FLOAT).setPosition(10, 95).setSize(60, 20).setUserInteraction(false).setAutoClear(false).setGroup(videoSettingsUI);
 		videoFrameCountField = cp5.addTextfield("videoFileFrameCount").setLabel("Total Frames").setValue("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setPosition(160, 95).setSize(60, 20).setGroup(videoSettingsUI);
+		videoFileWidth = cp5.addTextfield("videoFileWidth").setLabel("Width").setValue("0").setInputFilter(ControlP5.INTEGER).setPosition(240, 95).setSize(60, 20).setUserInteraction(false).setAutoClear(false).setGroup(videoSettingsUI);
+		videoFileHeight = cp5.addTextfield("videoFileHeight").setLabel("Height").setValue("0").setInputFilter(ControlP5.INTEGER).setPosition(320, 95).setSize(60, 20).setUserInteraction(false).setAutoClear(false).setGroup(videoSettingsUI);
 		videoFPSField = cp5.addTextfield("videoFileFPS").setLabel("FPS").setInputFilter(ControlP5.FLOAT).setValue("29.97").setPosition(100, 95).setSize(30, 20).setAutoClear(false).setGroup(videoSettingsUI);
 		videoFPSField.onChange(new CallbackListener() {
 			@Override
@@ -215,11 +219,14 @@ public class UserInterface {
 		generationProgressSlider.setValue(progress);
 	}
 	
-	public void setVideoDuration(float videoDuration) {
+	public void setVideoInfo(float videoDuration, int width, int height, float fps) {
 		videoFileDuration.setValue(String.valueOf(videoDuration));
+		videoFPSField.setValue(String.valueOf(fps));
+		videoFileWidth.setValue(String.valueOf(width));
+		videoFileHeight.setValue(String.valueOf(height));
 		
-		float fps = Float.valueOf(videoFPSField.getText());
-		videoFrameCountField.setValue(String.valueOf((int) (fps * videoDuration)));
+		//		float fps = Float.valueOf(videoFPSField.getText());
+		videoFrameCountField.setValue(String.valueOf((int) Math.ceil((fps * videoDuration))));
 		videoFrameCountUpdated();
 	}
 	
@@ -247,7 +254,7 @@ public class UserInterface {
 		}
 		imageWidthField.setText(String.valueOf(frameCount * slitWidth));
 		if (p.video != null) {
-			imageHeightField.setText(String.valueOf(p.video.height));
+			imageHeightField.setText(String.valueOf(p.video.height()));
 		}
 		
 		videoScrubber.setValue(0);
@@ -309,21 +316,24 @@ public class UserInterface {
 	
 	public void updateVideoDrawDimesions(int previewFrameWidth, int previewFrameHeight, int videoWidth, int videoHeight) {
 		this.videoWidth = videoWidth;
-		float scalingFactor = previewFrameWidth < p.width ? (float) p.width / (float) previewFrameWidth : 1f;
-		float newVideoDrawWidth = previewFrameWidth * scalingFactor;
-		float newVideoDrawHeight = previewFrameHeight * scalingFactor;
-		float aspectRatio = newVideoDrawWidth / newVideoDrawHeight;
-		if (newVideoDrawWidth > p.width) {
-			newVideoDrawWidth = p.width;
-			newVideoDrawHeight = (int) (newVideoDrawWidth / aspectRatio);
-		}
-		if (newVideoDrawHeight > p.height) {
-			newVideoDrawHeight = p.height;
-			newVideoDrawWidth = (int) (newVideoDrawHeight * aspectRatio);
-		}
+		//		float scalingFactor = previewFrameWidth < p.width ? (float) p.width / (float) previewFrameWidth : 1f;
+		//		float scalingFactor = Math.min(p.width / (float) previewFrameWidth, p.height / (float) previewFrameWidth);
+		//		float newVideoDrawWidth = previewFrameWidth;
+		//		float newVideoDrawHeight = previewFrameHeight;
+		//		float aspectRatio = newVideoDrawWidth / newVideoDrawHeight;
+		//		if (newVideoDrawWidth > p.width) {
+		//			newVideoDrawWidth = p.width;
+		//			newVideoDrawHeight = (int) (newVideoDrawWidth / aspectRatio);
+		//		}
+		//		if (newVideoDrawHeight > p.height) {
+		//			newVideoDrawHeight = p.height;
+		//			newVideoDrawWidth = (int) (newVideoDrawHeight * aspectRatio);
+		//		}
 		
-		videoDrawWidth = newVideoDrawWidth;
-		videoDrawHeight = newVideoDrawHeight;
+		//		videoDrawWidth = newVideoDrawWidth;
+		//		videoDrawHeight = newVideoDrawHeight;
+		videoDrawWidth = previewFrameWidth;
+		videoDrawHeight = previewFrameHeight;
 	}
 	
 	public float getVideoDrawWidth() {

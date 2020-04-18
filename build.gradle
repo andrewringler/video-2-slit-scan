@@ -21,8 +21,14 @@ repositories {
     flatDir {
         dirs 'lib', 'lib/p3', 'lib/p3-video', 'lib/controlP5'
     }
+ 	maven {
+        url "http://dev.loci.wisc.edu/maven2/releases/"
+    }
  	mavenCentral()
-  	jcenter()
+ 	jcenter()
+ 	maven {
+        url "https://maven.scijava.org/content/repositories/releases/"
+    }
  	maven {
         url "http://maven.imagej.net/content/repositories/releases/"
     }
@@ -35,16 +41,18 @@ dependencies {
     compile ":core:@jar",
             ":gluegen-rt:@jar",
             ":jogl-all@jar",
-            ":gstreamer-java:@jar",
+            ":gst1-java-core-1.1.0:@jar",
             ":jna:@jar",
             ":video:@jar",
             ":controlP5:@jar",
-            'com.google.guava:guava:20.0',
-            'org.slf4j:slf4j-api:1.6.1',
-            'io.scif:scifio:0.32.0'
+            "com.google.guava:guava:20.0",
+            "org.slf4j:slf4j-api:1.6.1",
+            "io.scif:scifio:0.32.0",
+            'org.jcodec:jcodec:0.2.3',
+            'org.jcodec:jcodec-javase:0.2.3'
             
-    runtime 'ch.qos.logback:logback-classic:1.0.9',
-            'io.scif:scifio:0.32.0',
+    runtime "ch.qos.logback:logback-classic:1.0.9",
+            "io.scif:scifio:0.32.0",
             fileTree(dir: 'lib/p3', include: '**/*.jar')
 }
 
