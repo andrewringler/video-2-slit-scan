@@ -98,9 +98,9 @@ public class UpdateTiffOnDisk implements Runnable {
 	
 	public void cancel() {
 		if (renderedSlitsFuture != null) {
-			done = true;
 			renderedSlitsFuture.cancel(false);
 		}
+		done = true;
 	}
 	
 	public void setFuture(ScheduledFuture<?> renderedSlitsFuture) {

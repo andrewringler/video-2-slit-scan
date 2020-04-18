@@ -36,16 +36,22 @@ public class Video2SlitScan extends PApplet {
 	private static final String[] APP_ICON_FILENAMES = { "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png" };
 	
 	// Video
-	Movie video;
+	//	PVideoWrapper video;
+	//	Movie video;
+	VideoWrapperFrameGrab video;
 	File videoFileName = null;
 	File outputFile = null;
 	PImage previewFrame;
 	int lastDrawUpdate = 0;
+	int videoFrameCount = 0;
+	int lastProcessedVideoFrame = 0;
+	int droppedFrames = 0;
 	boolean loadingFirstFrame = false;
 	boolean isPausedGeneratingSlice = false;
 	boolean doPause = false;
 	boolean doResume = false;
 	private float previewFrameTimecode = 0;
+	long timeOfLastVideoFrameRead = 0;
 	
 	// Slit generation
 	boolean generatingSlitScanImage = false;
@@ -144,14 +150,15 @@ public class Video2SlitScan extends PApplet {
 				video.dispose();
 				video = null;
 			}
-			video = new Movie(this, videoFileName.getAbsolutePath());
-			
+			//			video = new PVideoWrapper(new Movie(this, videoFileName.getAbsolutePath()));
+			video = new VideoWrapperFrameGrab(this, videoFileName.getAbsolutePath());
+			//			video = new PVideoWrapper(new Movie(this, videoFileName.getAbsolutePath()));
+			videoFrameCount = 0;
+			lastProcessedVideoFrame = 0;
+			loadingFirstFrame = true;
 			if (video != null) {
-				loadingFirstFrame = true;
 				video.volume(0);
 				video.play();
-			} else {
-				LOG.error("video file selection: unable to load video '" + videoFileName.getAbsolutePath() + "'");
 			}
 		}
 	}
@@ -160,10 +167,11 @@ public class Video2SlitScan extends PApplet {
 		if (!generatingSlitScanImage) {
 			if (video != null && outputFile != null) {
 				generatingSlitScanImage = true;
+				droppedFrames = 0;
 				ui.startGeneratingSlitScan();
 				initSlit = true;
 				
-				video.speed(ui.getPlaySpeed());
+				//				video.speed(ui.getPlaySpeed());
 				video.jump(0);
 				video.play();
 				previewFrameTimecode = 0;
@@ -188,14 +196,26 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void draw() {
-		background(0);
+		//		doProcessFrame();
+		background(100);
 		
-		if (previewFrame != null) {
-			ui.updateVideoDrawDimesions(previewFrame.width, previewFrame.height, video.width, video.height);
+		if (generatingSlitScanImage && tiffUpdater != null && timeOfLastVideoFrameRead > 0) {
+			if (millis() - timeOfLastVideoFrameRead > 5000) {
+				println("taking too long to read new frame, canceling video play");
+				tiffUpdater.cancel();
+			}
+		}
+		
+		if (previewFrame != null && video != null) {
+			ui.updateVideoDrawDimesions(previewFrame.width, previewFrame.height, video.width(), video.height());
 			
 			if (ui.previewModeFrame()) {
 				// fit video in our window
-				image(previewFrame, 0, 0, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
+				int yOffset = 0;
+				if (ui.getVideoDrawHeight() < height) {
+					yOffset = (int) Math.round((height - ui.getVideoDrawHeight()) / 2.0);
+				}
+				image(previewFrame, 0, yOffset, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
 			} else if (ui.previewModeSlit()) {
 				float positionInVideo = previewFrameTimecode / video.duration();
 				float slitLocationNormalized = slitLocations.getSlitLocationNormalized(positionInVideo);
@@ -209,10 +229,10 @@ public class Video2SlitScan extends PApplet {
 			slitLocations.draw(positionInVideo);
 			
 			// Video frame border
-			strokeWeight(1);
-			stroke(100, 100, 100);
-			noFill();
-			rect(0, 0, ui.getVideoDrawWidth() + 1, ui.getVideoDrawHeight() + 1);
+			//			strokeWeight(1);
+			//			stroke(100, 100, 100);
+			//			noFill();
+			//			rect(0, 0, ui.getVideoDrawWidth() + 1, ui.getVideoDrawHeight() + 1);
 		}
 		
 		if (doPause && video != null) {
@@ -226,7 +246,7 @@ public class Video2SlitScan extends PApplet {
 			doResume = true;
 		}
 		
-		if (generatingSlitScanImage && !initSlit) {
+		if (generatingSlitScanImage && !initSlit && tiffUpdater != null) {
 			ui.updateProgress(tiffUpdater.getProgress() * 100f);
 			ui.updatePlayhead(previewFrameTimecode);
 			if (tiffUpdater.isDone()) {
@@ -237,9 +257,12 @@ public class Video2SlitScan extends PApplet {
 				setNewOutputFile();
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
-			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > 0.1) {
+			//			float doScrubDelta = video.duration() < 2.0 ? 0.001f : 0.1f;
+			float doScrubDelta = 0.5f;
+			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > doScrubDelta) {
+				println("scrubbing");
 				if (ui.getVideoPlayhead() == video.duration()) {
-					video.jump(video.duration() - 0.1f);
+					video.jump(video.duration() - doScrubDelta);
 				} else {
 					video.jump(ui.getVideoPlayhead());
 				}
@@ -270,14 +293,38 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void movieEvent(Movie m) {
-		video.read(); // load current frame
+		video.read();
+		videoFrameCount++;
+		doProcessFrame();
+	}
+	
+	protected void doProcessFrame() {
+		if (videoFrameCount == lastProcessedVideoFrame) {
+			return;
+		}
+		if (generatingSlitScanImage && videoFrameCount > (lastProcessedVideoFrame + 1)) {
+			droppedFrames++;
+			println("dropped frames: " + droppedFrames);
+		}
+		lastProcessedVideoFrame = videoFrameCount;
+		
+		if (videoFrameCount == 2) {
+			video.get().save(sketchPath() + "-frame.png");
+		}
+		
+		// load current frame
+		timeOfLastVideoFrameRead = millis();
 		
 		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
-			float scalingFactor = video.width > 640 ? (float) video.width / 640f : 1f;
+			//			float scalingFactor = video.width() > 640 ? (float) video.width() / 640f : 1f;
+			float scalingFactor = Math.min(width / (float) video.width(), height / (float) video.height());
 			previewFrameTimecode = video.time();
 			/* skip preview frame generation for performance */
 			if (!ui.previewMode().equals(PreviewMode.NONE)) {
-				previewFrame = createImage((int) (video.width / scalingFactor), (int) (video.height / scalingFactor), RGB);
+				//				if(previewFrame == null) {
+				if (previewFrame == null) {
+					previewFrame = createImage((int) (video.width() * scalingFactor), (int) (video.height() * scalingFactor), RGB);
+				}
 				updatePreviewFrame();
 			}
 			lastDrawUpdate = millis();
@@ -286,8 +333,8 @@ public class Video2SlitScan extends PApplet {
 		if (loadingFirstFrame) {
 			loadingFirstFrame = false;
 			doPause = true;
-			ui.setVideoDuration(video.duration());
-			LOG.info("video is [" + video.width + "x" + video.height + "], preview frame is [" + previewFrame.width + "x" + previewFrame.height, "]");
+			ui.setVideoInfo(video.duration(), video.width(), video.height(), 60);
+			LOG.info("video is " + video.duration() + " seconds [" + video.width() + "x" + video.height() + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height, "]");
 		}
 		
 		if (initSlit) {
@@ -297,28 +344,28 @@ public class Video2SlitScan extends PApplet {
 			
 			// if output file does not exist, populate with blank image
 			if (!outputFile.exists()) {
-				createBlankImage(scifio, outputFile.getAbsolutePath(), imageWidth, video.height);
+				createBlankImage(scifio, outputFile.getAbsolutePath(), imageWidth, video.height());
 			}
 			
 			// cancel any previous rendering
 			if (tiffUpdater != null) {
 				tiffUpdater.cancel();
 			}
-			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, ui.getStartingPixel(), outputFile.getAbsolutePath(), imageWidth, ui.getSlitWidth(), video.height);
+			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, ui.getStartingPixel(), outputFile.getAbsolutePath(), imageWidth, ui.getSlitWidth(), video.height());
 			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
 		
 		if (generatingSlitScanImage) {
 			// grab a slit from the middle of the current video frame
-			PImage slit = createImage(tiffUpdater.getSlitWidth(), video.height, RGB);
+			PImage slit = createImage(tiffUpdater.getSlitWidth(), video.height(), RGB);
 			float positionInVideo = video.time() / video.duration();
-			int slitX = (int) round(video.width * slitLocations.getSlitLocationNormalized(positionInVideo));
+			int slitX = (int) round(video.width() * slitLocations.getSlitLocationNormalized(positionInVideo));
 			/* check if slit is too close to the edge */
-			if (slitX + slit.width > video.width) {
-				slitX = video.width - slit.width;
+			if (slitX + slit.width > video.width()) {
+				slitX = video.width() - slit.width;
 			}
-			slit.copy(video, slitX, 0, slit.width, video.height, 0, 0, slit.width, slit.height);
+			slit.copy(video.get(), slitX, 0, slit.width, video.height(), 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
@@ -334,9 +381,10 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	private void updatePreviewFrame() {
-		PImage frame = createImage(previewFrame.width, previewFrame.height, RGB);
-		frame.copy(video, 0, 0, video.width, video.height, 0, 0, previewFrame.width, previewFrame.height);
-		previewFrame = frame;
+		//		PImage frame = createImage(previewFrame.width, previewFrame.height, RGB);
+		previewFrame.copy(video.get(), 0, 0, video.width(), video.height(), 0, 0, previewFrame.width, previewFrame.height);
+		//		previewFrame = frame;
+		previewFrame.get().save(sketchPath() + "/frame.png");
 	}
 	
 	/*
