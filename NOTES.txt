@@ -1,0 +1,9 @@
+Checkout:
+
+https://github.com/caprica/vlcj
+https://www.ffmpeg.org/ffmpeg-codecs.html
+https://github.com/CodyJL/JStreamer
+https://gstreamer.freedesktop.org/features/
+http://bytedeco.org/
+https://github.com/kokorin/Jaffree
+http://fmj-sf.net/ffmpeg-java/getting_started.php
