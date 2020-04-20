@@ -49,7 +49,8 @@ dependencies {
             "org.slf4j:slf4j-api:1.6.1",
             "io.scif:scifio:0.32.0",
             'org.jcodec:jcodec:0.2.3',
-            'org.jcodec:jcodec-javase:0.2.3'
+            'org.jcodec:jcodec-javase:0.2.3',
+            'uk.co.caprica:vlcj:4.1.0'
             
     runtime "ch.qos.logback:logback-classic:1.0.9",
             "io.scif:scifio:0.32.0",
