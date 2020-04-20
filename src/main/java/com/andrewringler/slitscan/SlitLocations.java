@@ -1,5 +1,6 @@
 package com.andrewringler.slitscan;
 
+import static com.andrewringler.slitscan.Drawing.patternLine;
 import static processing.core.PApplet.map;
 import static processing.core.PApplet.round;
 
@@ -143,15 +144,15 @@ public class SlitLocations {
 			p.stroke(255);
 			int scaledSlitLocation = round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
 			//			LOG.info("" + scaledSlitLocation + " " + positionInVideo + " " + ui.getVideoDrawWidth());
-			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
+			patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
 			p.stroke(0);
-			p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
+			patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
 			
 			if (draggingSlit) {
 				p.stroke(255, 255, 0);
-				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
+				patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
 				p.stroke(0, 255, 0);
-				p.patternLine(scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
+				patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
 			}
 		}
 	}

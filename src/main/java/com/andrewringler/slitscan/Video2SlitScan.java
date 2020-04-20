@@ -226,12 +226,6 @@ public class Video2SlitScan extends PApplet {
 			
 			float positionInVideo = previewFrameTimecode / video.duration();
 			slitLocations.draw(positionInVideo);
-			
-			// Video frame border
-			//			strokeWeight(1);
-			//			stroke(100, 100, 100);
-			//			noFill();
-			//			rect(0, 0, ui.getVideoDrawWidth() + 1, ui.getVideoDrawHeight() + 1);
 		}
 		
 		if (doPause && video != null) {
@@ -256,7 +250,6 @@ public class Video2SlitScan extends PApplet {
 				setNewOutputFile();
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
-			//			float doScrubDelta = video.duration() < 2.0 ? 0.001f : 0.1f;
 			float doScrubDelta = 0.5f;
 			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > doScrubDelta) {
 				println("scrubbing");
@@ -291,12 +284,6 @@ public class Video2SlitScan extends PApplet {
 		ui.keyPressed();
 	}
 	
-	//	public void movieEvent(Movie m) {
-	//		video.read();
-	//		videoFrameCount++;
-	//		doProcessFrame();
-	//	}
-	
 	protected void doProcessFrame(PImage frame) {
 		if (videoFrameCount == lastProcessedVideoFrame) {
 			return;
@@ -307,10 +294,6 @@ public class Video2SlitScan extends PApplet {
 		}
 		lastProcessedVideoFrame = videoFrameCount;
 		
-		//		if (videoFrameCount == 2) {
-		//			video.get().save(sketchPath() + "-frame.png");
-		//		}
-		
 		// load current frame
 		timeOfLastVideoFrameRead = millis();
 		
@@ -320,7 +303,6 @@ public class Video2SlitScan extends PApplet {
 			previewFrameTimecode = video.timeSeconds();
 			/* skip preview frame generation for performance */
 			if (!ui.previewMode().equals(PreviewMode.NONE)) {
-				//				if(previewFrame == null) {
 				if (previewFrame == null) {
 					previewFrame = createImage((int) (frame.width * scalingFactor), (int) (frame.height * scalingFactor), RGB);
 				}
@@ -366,7 +348,7 @@ public class Video2SlitScan extends PApplet {
 			}
 			slit.copy(video.get(), slitX, 0, slit.width, video.height(), 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
-			//			System.out.println("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
+			//	LOG.debug("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}
 	}
 	
@@ -382,73 +364,6 @@ public class Video2SlitScan extends PApplet {
 	private void updatePreviewFrame(PImage frame) {
 		previewFrame.copy(frame, 0, 0, frame.width, frame.height, 0, 0, previewFrame.width, previewFrame.height);
 		previewFrame.get().save(sketchPath() + "/frame.png");
-	}
-	
-	/*
-	 * based on Bresenham's algorithm from wikipedia
-	 * http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
-	 * https://processing.org/discourse/beta/num_1202486379.html
-	 * Some examples:
-	 * linePattern = 0x5555 will be a dotted line, alternating one drawn and one skipped pixel.
-	 * linePattern = 0x0F0F will be medium sized dashes.
-	 * linePattern = 0xFF00 will be large dashes.
-	 */
-	public void patternLine(int xStart, int yStart, int xEnd, int yEnd, int linePattern, int lineScale) {
-		int temp, yStep, x, y;
-		int pattern = linePattern;
-		int carry;
-		int count = lineScale;
-		
-		boolean steep = (abs(yEnd - yStart) > abs(xEnd - xStart));
-		if (steep == true) {
-			temp = xStart;
-			xStart = yStart;
-			yStart = temp;
-			temp = xEnd;
-			xEnd = yEnd;
-			yEnd = temp;
-		}
-		if (xStart > xEnd) {
-			temp = xStart;
-			xStart = xEnd;
-			xEnd = temp;
-			temp = yStart;
-			yStart = yEnd;
-			yEnd = temp;
-		}
-		int deltaX = xEnd - xStart;
-		int deltaY = abs(yEnd - yStart);
-		int error = -(deltaX + 1) / 2;
-		
-		y = yStart;
-		if (yStart < yEnd) {
-			yStep = 1;
-		} else {
-			yStep = -1;
-		}
-		for (x = xStart; x <= xEnd; x++) {
-			if ((pattern & 1) == 1) {
-				if (steep == true) {
-					point(y, x);
-				} else {
-					point(x, y);
-				}
-				carry = 0x8000;
-			} else {
-				carry = 0;
-			}
-			count--;
-			if (count <= 0) {
-				pattern = (pattern >> 1) + carry;
-				count = lineScale;
-			}
-			
-			error += deltaY;
-			if (error >= 0) {
-				y += yStep;
-				error -= deltaX;
-			}
-		}
 	}
 	
 	private void cleanup() {
