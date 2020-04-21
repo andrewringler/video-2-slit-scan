@@ -363,7 +363,6 @@ public class Video2SlitScan extends PApplet {
 	
 	private void updatePreviewFrame(PImage frame) {
 		previewFrame.copy(frame, 0, 0, frame.width, frame.height, 0, 0, previewFrame.width, previewFrame.height);
-		previewFrame.get().save(sketchPath() + "/frame.png");
 	}
 	
 	private void cleanup() {
