@@ -1,6 +1,9 @@
 package com.andrewringler.slitscan;
 
 import static com.andrewringler.slitscan.StreamingImageTools.createBlankImage;
+import static com.andrewringler.slitscan.vlcj.VLCJUtil.vlcInstallationFound;
+import static javax.swing.JOptionPane.ERROR_MESSAGE;
+import static javax.swing.JOptionPane.showMessageDialog;
 
 import java.awt.Image;
 import java.io.File;
@@ -402,7 +405,12 @@ public class Video2SlitScan extends PApplet {
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", APP_NAME);
 		System.setProperty("apple.awt.application.name", APP_NAME);
 		
-		// https://processing.org/tutorials/eclipse/
-		PApplet.main(new String[] { "--bgcolor=#000000", Video2SlitScan.class.getCanonicalName() });
+		if (vlcInstallationFound()) {
+			// https://processing.org/tutorials/eclipse/
+			PApplet.main(new String[] { "--bgcolor=#000000", Video2SlitScan.class.getCanonicalName() });
+		} else {
+			LOG.error("Could not find any installation of VLC");
+			showMessageDialog(null, "Could not find any installation of VLC.\nPlease install the VLC Player (https://www.videolan.org/)\nin the default location, or set the\nenvironment variable VLC_PLUGIN_PATH to the location\nof your VLC installation.", "VLC Missing", ERROR_MESSAGE);
+		}
 	}
 }
