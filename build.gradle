@@ -19,7 +19,7 @@ version = '0.2.4'
 
 repositories {
     flatDir {
-        dirs 'lib', 'lib/p3', 'lib/p3-video', 'lib/controlP5'
+        dirs 'lib', 'lib/p3', 'lib/controlP5'
     }
  	maven {
         url "http://dev.loci.wisc.edu/maven2/releases/"
@@ -41,15 +41,10 @@ dependencies {
     compile ":core:@jar",
             ":gluegen-rt:@jar",
             ":jogl-all@jar",
-            ":gst1-java-core-1.1.0:@jar",
-            ":jna:@jar",
-            ":video:@jar",
             ":controlP5:@jar",
             "com.google.guava:guava:20.0",
             "org.slf4j:slf4j-api:1.6.1",
             "io.scif:scifio:0.32.0",
-            'org.jcodec:jcodec:0.2.3',
-            'org.jcodec:jcodec-javase:0.2.3',
             'uk.co.caprica:vlcj:4.1.0'
             
     runtime "ch.qos.logback:logback-classic:1.0.9",
@@ -63,8 +58,6 @@ dependencies {
 //
 // gradle createDmg
 //
-// the p3-video jars require us to preserve the specific folder structure
-// wrap copy in task for delayed evaluation
 macAppBundle {
     mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
     appName = "Video-2-Slit-Scan"
@@ -79,16 +72,11 @@ macAppBundle {
 task copySlitScanNatives {
 	outputs.upToDateWhen { false }
 	
-	doLast {
-		Copy videoLibs = task(videoLibs, type: Copy)
-		videoLibs.from 'lib/p3-video'
-		videoLibs.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java"
-		videoLibs.execute()
-		
+	doLast {		
 		Copy data = task(data, type: Copy)
 		data.from 'data'
 		data.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java/data"
-		data.execute()
+		data.finalizedBy()
 	}
 }
 createApp.finalizedBy copySlitScanNatives
@@ -140,9 +128,6 @@ createExe.finalizedBy zipUpWindows
 distributions {
     main {
         contents {
-            from('lib/p3-video') {
-                into 'lib'
-            }
             from('data') {
                 into 'data'
             }
