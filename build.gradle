@@ -49,6 +49,7 @@ dependencies {
             
     runtime "ch.qos.logback:logback-classic:1.0.9",
             "io.scif:scifio:0.32.0",
+            'uk.co.caprica:vlcj-natives:4.1.0',            
             fileTree(dir: 'lib/p3', include: '**/*.jar')
 }
 
@@ -64,22 +65,19 @@ macAppBundle {
     bundleExecutable = "Video-2-Slit-Scan"
     icon = "doc/icon.icns"
     bundleJRE = true
+    jreHome = System.getenv('JAVA_HOME')
     javaProperties.put("apple.laf.useScreenMenuBar", "false")
     backgroundImage = "doc/macbackground.png"
     backgroundImageWidth = 527
     backgroundImageHeight = 429
 }
-task copySlitScanNatives {
+task copyDataDirMac(type: Copy) {
 	outputs.upToDateWhen { false }
 	
-	doLast {		
-		Copy data = task(data, type: Copy)
-		data.from 'data'
-		data.into "${-> project.buildDir}/${-> macAppBundle.appOutputDir}/${-> macAppBundle.appName}.app/Contents/Java/data"
-		data.finalizedBy()
-	}
+	from 'data'
+	into "${project.buildDir}/${macAppBundle.appOutputDir}/${macAppBundle.appName}.app/Contents/Java/data"
 }
-createApp.finalizedBy copySlitScanNatives
+createApp.finalizedBy copyDataDirMac
 
 
 //

@@ -46,12 +46,13 @@ See also [Strip photography](https://en.wikipedia.org/wiki/Strip_photography) fo
 ## Developer Notes
 ### New Developer Setup
  * Install Eclipse Neon
- * Install Gradle
  * run after-pull.sh
  * Import Project Into Eclipse
  
 ### Build Installers:
-    gradle createDmg
+Set JAVA_HOME environment variable to a Java 1.8 installation, then run:
+
+    gradle createDmg    
     gradle createExe
     gradle distTar
     
