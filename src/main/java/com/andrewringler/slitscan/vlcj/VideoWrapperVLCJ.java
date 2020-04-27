@@ -11,7 +11,6 @@ import com.andrewringler.slitscan.FrameReady;
 import com.andrewringler.slitscan.Video2SlitScan;
 import com.andrewringler.slitscan.VideoWrapper;
 
-import processing.core.PImage;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.media.Media;
 import uk.co.caprica.vlcj.media.MediaEventAdapter;
@@ -34,7 +33,6 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	int width = 0;
 	int height = 0;
 	int[] buffer = null;
-	PImageFromIntBuffer frame = null;
 	volatile boolean ready = false;
 	volatile boolean playing = false;
 	private final FrameReady frameReady;
@@ -43,7 +41,6 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		@Override
 		public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
 			PImageFromIntBuffer newFrame = new PImageFromIntBuffer(width, height, nativeBuffers[0].asIntBuffer());
-			frame = newFrame;
 			frameReady.processFrame(newFrame);
 		}
 	}
@@ -139,14 +136,6 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 			return m.status().position() * duration();
 		}
 		return 0;
-	}
-	
-	@Override
-	public PImage get() {
-		if (ready() && frame != null) {
-			return frame;
-		}
-		return null;
 	}
 	
 	@Override

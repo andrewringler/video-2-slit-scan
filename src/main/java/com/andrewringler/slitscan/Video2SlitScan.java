@@ -349,7 +349,7 @@ public class Video2SlitScan extends PApplet {
 			if (slitX + slit.width > frame.width) {
 				slitX = frame.width - slit.width;
 			}
-			slit.copy(video.get(), slitX, 0, slit.width, video.height(), 0, 0, slit.width, slit.height);
+			slit.copy(frame, slitX, 0, slit.width, video.height(), 0, 0, slit.width, slit.height);
 			slitQueue.add(slit);
 			//	LOG.debug("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 		}

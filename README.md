@@ -45,16 +45,16 @@ See also [Strip photography](https://en.wikipedia.org/wiki/Strip_photography) fo
 
 ## Developer Notes
 ### New Developer Setup
- * Install Eclipse Neon
+ * Install Eclipse Neon (or later)
  * run after-pull.sh
  * Import Project Into Eclipse
  
 ### Build Installers:
 Set JAVA_HOME environment variable to a Java 1.8 installation, then run:
 
-    gradle createDmg    
-    gradle createExe
-    gradle distTar
+    ./gradlew createDmg    
+    ./gradlew createExe
+    ./gradlew distTar
     
 #### Debug Windows build.
 To get additional JVM logging, launch Video-2-Slit-Scan from the Command Prompt with l4j flag. This will generate an extra launch4j log file with uncaught Runtime Exceptions.
@@ -64,8 +64,7 @@ To get additional JVM logging, launch Video-2-Slit-Scan from the Command Prompt 
 #### Debug Mac build.
 To get additional logging, control-click on application icon, click `Show Package Contents`, browse to Contents > MacOS and double-click `JavaAppLauncher`. Logging will show up in the `Terminal` window.
 
-
-### Create App Icons
+### Create or Update App Icons
 #### Mac
  * Create PNG image 1024x1024
  * Convert to iconset folder with [Icon Generator](https://github.com/onmyway133/IconGenerator)

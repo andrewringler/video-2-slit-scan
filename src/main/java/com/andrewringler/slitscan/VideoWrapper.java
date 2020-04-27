@@ -1,7 +1,5 @@
 package com.andrewringler.slitscan;
 
-import processing.core.PImage;
-
 public interface VideoWrapper {
 	
 	void stop();
@@ -15,8 +13,6 @@ public interface VideoWrapper {
 	void jump(float f);
 	
 	float timeSeconds();
-	
-	PImage get();
 	
 	int width();
 	
