@@ -1,6 +1,5 @@
 package com.andrewringler.slitscan;
 
-import static com.andrewringler.slitscan.StreamingImageTools.createBlankImage;
 import static com.andrewringler.slitscan.vlcj.VLCJUtil.vlcInstallationFound;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.showMessageDialog;
@@ -9,14 +8,7 @@ import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
-import javax.imageio.ImageIO;
-import javax.imageio.spi.IIORegistry;
 import javax.swing.ImageIcon;
 
 import org.slf4j.Logger;
@@ -25,9 +17,6 @@ import org.slf4j.LoggerFactory;
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
 import com.andrewringler.slitscan.vlcj.VideoWrapperVLCJ;
 
-import io.scif.SCIFIO;
-import io.scif.media.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
-import io.scif.media.imageioimpl.plugins.tiff.TIFFImageWriterSpi;
 import processing.core.PApplet;
 import processing.core.PImage;
 import processing.opengl.PGraphics2D;
@@ -42,39 +31,28 @@ public class Video2SlitScan extends PApplet {
 	File videoFileName = null;
 	File outputFile = null;
 	PImage previewFrame;
-	int lastDrawUpdate = 0;
-	int videoFrameCount = 0;
-	int lastProcessedVideoFrame = 0;
-	int droppedFrames = 0;
 	boolean loadingFirstFrame = false;
 	boolean isPausedGeneratingSlice = false;
 	boolean doPause = false;
 	boolean doResume = false;
 	private float previewFrameTimecode = 0;
-	long timeOfLastVideoFrameRead = 0;
+	int lastDrawUpdate = 0;
+	int timeOfLastVideoFrameRead = 0;
+	
+	final FrameProcessor frameProcessor;
 	
 	// Slit generation
 	boolean generatingSlitScanImage = false;
 	boolean generatingSlicePause = false;
-	boolean initSlit = false;
 	SlitLocations slitLocations;
 	
-	// file writing
-	LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
-	private final SCIFIO scifio;
-	ScheduledExecutorService fileWritingExecutor = Executors.newScheduledThreadPool(1);
-	private UpdateTiffOnDisk tiffUpdater;
 	private UserInterface ui;
 	
 	public Video2SlitScan() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
 		LOG.info("video-2-slit-scan launched");
 		
-		// register SCIFIO TIFF readers and writers for use with Java ImageIO
-		scifio = new SCIFIO();
-		IIORegistry.getDefaultInstance().registerServiceProvider(new TIFFImageWriterSpi());
-		IIORegistry.getDefaultInstance().registerServiceProvider(new TIFFImageReaderSpi());
-		ImageIO.scanForPlugins();
+		frameProcessor = new FrameProcessor();
 		
 		// Set App icons for Mac
 		// 16, 32, 48, 64, 128, 256, 512
@@ -152,17 +130,44 @@ public class Video2SlitScan extends PApplet {
 				video = null;
 			}
 			
-			videoFrameCount = 0;
-			lastProcessedVideoFrame = 0;
 			loadingFirstFrame = true;
 			
 			video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReady() {
 				@Override
 				public void processFrame(PImage frame) {
-					videoFrameCount++;
-					doProcessFrame(frame);
+					timeOfLastVideoFrameRead = millis();
+					
+					doProcessPreviewFrame(frame);
+					
+					if (loadingFirstFrame) {
+						loadingFirstFrame = false;
+						doPause = true;
+						ui.setVideoInfo(video.duration(), frame.width, frame.height, 60);
+						LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "]");
+						return;
+					}
+					
+					if (generatingSlitScanImage) {
+						frameProcessor.doProcessFrame(Video2SlitScan.this, frame, video, slitLocations);
+					}
 				}
 			}, true);
+		}
+	}
+	
+	private void doProcessPreviewFrame(PImage frame) {
+		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
+			//			float scalingFactor = video.width() > 640 ? (float) video.width() / 640f : 1f;
+			float scalingFactor = Math.min(width / (float) frame.width, height / (float) frame.height);
+			previewFrameTimecode = video.timeSeconds();
+			/* skip preview frame generation for performance */
+			if (!ui.previewMode().equals(PreviewMode.NONE)) {
+				if (previewFrame == null) {
+					previewFrame = createImage((int) (frame.width * scalingFactor), (int) (frame.height * scalingFactor), RGB);
+				}
+				updatePreviewFrame(frame);
+			}
+			lastDrawUpdate = millis();
 		}
 	}
 	
@@ -170,9 +175,9 @@ public class Video2SlitScan extends PApplet {
 		if (!generatingSlitScanImage) {
 			if (video != null && outputFile != null) {
 				generatingSlitScanImage = true;
-				droppedFrames = 0;
 				ui.startGeneratingSlitScan();
-				initSlit = true;
+				
+				frameProcessor.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
 				
 				video.speed(ui.getPlaySpeed());
 				video.jump(0);
@@ -201,10 +206,10 @@ public class Video2SlitScan extends PApplet {
 	public void draw() {
 		background(220, 242, 254);
 		
-		if (generatingSlitScanImage && tiffUpdater != null && timeOfLastVideoFrameRead > 0) {
+		if (generatingSlitScanImage && timeOfLastVideoFrameRead > 0) {
 			if (millis() - timeOfLastVideoFrameRead > 5000) {
 				println("taking too long to read new frame, canceling video play");
-				tiffUpdater.cancel();
+				frameProcessor.done();
 			}
 		}
 		
@@ -242,10 +247,10 @@ public class Video2SlitScan extends PApplet {
 			doResume = true;
 		}
 		
-		if (generatingSlitScanImage && !initSlit && tiffUpdater != null) {
-			ui.updateProgress(tiffUpdater.getProgress() * 100f);
+		if (generatingSlitScanImage) {
+			ui.updateProgress(frameProcessor.getProgress() * 100f);
 			ui.updatePlayhead(previewFrameTimecode);
-			if (tiffUpdater.isDone()) {
+			if (frameProcessor.isDone()) {
 				generatingSlitScanImage = false;
 				ui.doneGeneratingSlitScan();
 				
@@ -287,74 +292,6 @@ public class Video2SlitScan extends PApplet {
 		ui.keyPressed();
 	}
 	
-	protected void doProcessFrame(PImage frame) {
-		if (videoFrameCount == lastProcessedVideoFrame) {
-			return;
-		}
-		if (generatingSlitScanImage && videoFrameCount > (lastProcessedVideoFrame + 1)) {
-			droppedFrames++;
-			println("dropped frames: " + droppedFrames);
-		}
-		lastProcessedVideoFrame = videoFrameCount;
-		
-		// load current frame
-		timeOfLastVideoFrameRead = millis();
-		
-		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
-			//			float scalingFactor = video.width() > 640 ? (float) video.width() / 640f : 1f;
-			float scalingFactor = Math.min(width / (float) frame.width, height / (float) frame.height);
-			previewFrameTimecode = video.timeSeconds();
-			/* skip preview frame generation for performance */
-			if (!ui.previewMode().equals(PreviewMode.NONE)) {
-				if (previewFrame == null) {
-					previewFrame = createImage((int) (frame.width * scalingFactor), (int) (frame.height * scalingFactor), RGB);
-				}
-				updatePreviewFrame(frame);
-			}
-			lastDrawUpdate = millis();
-		}
-		
-		if (loadingFirstFrame) {
-			loadingFirstFrame = false;
-			doPause = true;
-			ui.setVideoInfo(video.duration(), frame.width, frame.height, 60);
-			LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "]");
-		}
-		
-		if (initSlit) {
-			initSlit = false;
-			
-			int imageWidth = ui.getImageWidth();
-			
-			// if output file does not exist, populate with blank image
-			if (!outputFile.exists()) {
-				createBlankImage(scifio, outputFile.getAbsolutePath(), imageWidth, frame.height);
-			}
-			
-			// cancel any previous rendering
-			if (tiffUpdater != null) {
-				tiffUpdater.cancel();
-			}
-			tiffUpdater = new UpdateTiffOnDisk(this, slitQueue, ui.getStartingPixel(), outputFile.getAbsolutePath(), imageWidth, ui.getSlitWidth(), frame.height);
-			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
-			tiffUpdater.setFuture(renderedSlitsFuture);
-		}
-		
-		if (generatingSlitScanImage) {
-			// grab a slit from the middle of the current video frame
-			PImage slit = createImage(tiffUpdater.getSlitWidth(), frame.height, RGB);
-			float positionInVideo = video.timeSeconds() / video.duration();
-			int slitX = (int) round(frame.width * slitLocations.getSlitLocationNormalized(positionInVideo));
-			/* check if slit is too close to the edge */
-			if (slitX + slit.width > frame.width) {
-				slitX = frame.width - slit.width;
-			}
-			slit.copy(frame, slitX, 0, slit.width, video.height(), 0, 0, slit.width, slit.height);
-			slitQueue.add(slit);
-			//	LOG.debug("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
-		}
-	}
-	
 	private void setNewOutputFile() {
 		// on a Mac?
 		String home = System.getProperty("user.home");
@@ -372,12 +309,11 @@ public class Video2SlitScan extends PApplet {
 		LOG.info("video-2-slit-scan quiting");
 		
 		generatingSlitScanImage = false;
-		scifio.getContext().dispose();
 		if (video != null) {
 			video.stop();
 		}
 		video = null;
-		fileWritingExecutor.shutdown();
+		frameProcessor.cleanup();
 	}
 	
 	public void dispose() {
