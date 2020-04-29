@@ -59,11 +59,6 @@ public class FrameProcessor {
 		initSlit = true;
 	}
 	
-	public void cleanup() {
-		scifio.getContext().dispose();
-		fileWritingExecutor.shutdown();
-	}
-	
 	public void doProcessFrame(PApplet p, PImage frame, VideoMeta video, SlitLocations slitLocations) {
 		if (initSlit) {
 			initSlit = false;
@@ -114,4 +109,13 @@ public class FrameProcessor {
 		}
 		return false;
 	}
+	
+	public void cleanup() {
+		if (tiffUpdater != null) {
+			tiffUpdater.cancel();
+		}
+		scifio.getContext().dispose();
+		fileWritingExecutor.shutdown();
+	}
+	
 }
