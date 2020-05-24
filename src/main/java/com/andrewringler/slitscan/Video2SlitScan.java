@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
-import com.andrewringler.slitscan.vlcj.VideoWrapperVLCJ;
+import com.andrewringler.slitscan.jcodec.VideoWrapperJCodec;
 
 import processing.core.PApplet;
 import processing.core.PImage;
@@ -112,6 +112,27 @@ public class Video2SlitScan extends PApplet {
 		selectInput("Select a video to process", "videoFileSelected");
 	}
 	
+	class FrameReadyProcess implements FrameReady {
+		@Override
+		public void processFrame(PImage frame) {
+			timeOfLastVideoFrameRead = millis();
+			
+			doProcessPreviewFrame(frame);
+			
+			if (loadingFirstFrame) {
+				loadingFirstFrame = false;
+				doPause = true;
+				ui.setVideoInfo(video.duration(), frame.width, frame.height, 60);
+				LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "]");
+				return;
+			}
+			
+			if (generatingSlitScanImage) {
+				frameProcessor.doProcessFrame(Video2SlitScan.this, frame, video, slitLocations);
+			}
+		}
+	}
+	
 	public void videoFileSelected(File selection) {
 		if (selection == null) {
 			LOG.info("video file selection: window was closed or user hit cancel");
@@ -132,26 +153,8 @@ public class Video2SlitScan extends PApplet {
 			
 			loadingFirstFrame = true;
 			
-			video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReady() {
-				@Override
-				public void processFrame(PImage frame) {
-					timeOfLastVideoFrameRead = millis();
-					
-					doProcessPreviewFrame(frame);
-					
-					if (loadingFirstFrame) {
-						loadingFirstFrame = false;
-						doPause = true;
-						ui.setVideoInfo(video.duration(), frame.width, frame.height, 60);
-						LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "]");
-						return;
-					}
-					
-					if (generatingSlitScanImage) {
-						frameProcessor.doProcessFrame(Video2SlitScan.this, frame, video, slitLocations);
-					}
-				}
-			}, true);
+			//			video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
+			video = new VideoWrapperJCodec(videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
 		}
 	}
 	
