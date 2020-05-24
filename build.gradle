@@ -19,7 +19,7 @@ version = '0.2.4'
 
 repositories {
     flatDir {
-        dirs 'lib', 'lib/p3', 'lib/controlP5'
+        dirs 'lib', 'lib/p3', 'lib/controlP5', 'lib/jcodec'
     }
  	maven {
         url "http://dev.loci.wisc.edu/maven2/releases/"
@@ -45,7 +45,9 @@ dependencies {
             "com.google.guava:guava:20.0",
             "org.slf4j:slf4j-api:1.6.1",
             "io.scif:scifio:0.32.0",
-            'uk.co.caprica:vlcj:4.1.0'
+            'uk.co.caprica:vlcj:4.1.0',
+            ':jcodec-0.2.6-SNAPSHOT@jar',
+            ':jcodec-javase-0.2.6-SNAPSHOT@jar'
             
     runtime "ch.qos.logback:logback-classic:1.0.9",
             "io.scif:scifio:0.32.0",
