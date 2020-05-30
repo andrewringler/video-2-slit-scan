@@ -20,7 +20,7 @@ import processing.core.PConstants;
 import processing.core.PImage;
 
 public class UpdateTiffOnDisk implements Runnable {
-	private final LinkedBlockingQueue<PImage> slitQueue;
+	private final LinkedBlockingQueue<Slit> slitQueue;
 	private final int outputFileWidth;
 	private final String outputFileName;
 	private final int slitWidth;
@@ -31,7 +31,7 @@ public class UpdateTiffOnDisk implements Runnable {
 	private boolean done = false;
 	private ScheduledFuture<?> renderedSlitsFuture;
 	
-	public UpdateTiffOnDisk(PApplet p, LinkedBlockingQueue<PImage> slitQueue, int startingPixel, String outputFileName, int outputFileWidth, int slitWidth, int slitHeight) {
+	public UpdateTiffOnDisk(PApplet p, LinkedBlockingQueue<Slit> slitQueue, int startingPixel, String outputFileName, int outputFileWidth, int slitWidth, int slitHeight) {
 		this.p = p;
 		this.slitQueue = slitQueue;
 		this.outputFileWidth = outputFileWidth;
@@ -69,7 +69,7 @@ public class UpdateTiffOnDisk implements Runnable {
 		PImage slitsBatchImage = p.createImage(batchImagePixelWidth, slitHeight, PConstants.RGB);
 		
 		for (int i = 0; i < batchSize; i++) {
-			slit = slitQueue.poll();
+			slit = slitQueue.poll().getPImage();
 			slitsBatchImage.copy(slit, 0, 0, slit.width, slit.height, i * slitWidth, 0, slit.width, slit.height);
 		}
 		

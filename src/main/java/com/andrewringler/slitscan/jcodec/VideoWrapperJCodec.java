@@ -18,6 +18,7 @@ import org.jcodec.javase.scale.AWTUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewringler.slitscan.Frame;
 import com.andrewringler.slitscan.FrameReady;
 import com.andrewringler.slitscan.VideoWrapper;
 
@@ -67,7 +68,7 @@ public class VideoWrapperJCodec implements VideoWrapper {
 								LOG.info("Frame meta: width=" + picture.getWidth() + " height=" + picture.getHeight() + " color=" + picture.getColor());
 								currentFrame.incrementAndGet();
 								BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
-								frameReady.processFrame(new PImage(bufferedImage));
+								frameReady.processFrame(new Frame(new PImage(bufferedImage), picture));
 							}
 						} catch (IOException e) {
 							// nothing

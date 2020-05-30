@@ -114,7 +114,7 @@ public class Video2SlitScan extends PApplet {
 	
 	class FrameReadyProcess implements FrameReady {
 		@Override
-		public void processFrame(PImage frame) {
+		public void processFrame(Frame frame) {
 			timeOfLastVideoFrameRead = millis();
 			
 			doProcessPreviewFrame(frame);
@@ -158,7 +158,7 @@ public class Video2SlitScan extends PApplet {
 		}
 	}
 	
-	private void doProcessPreviewFrame(PImage frame) {
+	private void doProcessPreviewFrame(Frame frame) {
 		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
 			//			float scalingFactor = video.width() > 640 ? (float) video.width() / 640f : 1f;
 			float scalingFactor = Math.min(width / (float) frame.width, height / (float) frame.height);
@@ -304,8 +304,8 @@ public class Video2SlitScan extends PApplet {
 		}
 	}
 	
-	private void updatePreviewFrame(PImage frame) {
-		previewFrame.copy(frame, 0, 0, frame.width, frame.height, 0, 0, previewFrame.width, previewFrame.height);
+	private void updatePreviewFrame(Frame frame) {
+		previewFrame.copy(frame.getPImage(), 0, 0, frame.width, frame.height, 0, 0, previewFrame.width, previewFrame.height);
 	}
 	
 	private void cleanup() {

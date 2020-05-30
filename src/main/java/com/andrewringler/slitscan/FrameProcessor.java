@@ -2,7 +2,6 @@ package com.andrewringler.slitscan;
 
 import static com.andrewringler.slitscan.StreamingImageTools.createBlankImage;
 import static processing.core.PApplet.round;
-import static processing.core.PConstants.RGB;
 
 import java.io.File;
 import java.util.concurrent.Executors;
@@ -18,7 +17,6 @@ import io.scif.SCIFIO;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
 import io.scif.media.imageioimpl.plugins.tiff.TIFFImageWriterSpi;
 import processing.core.PApplet;
-import processing.core.PImage;
 
 public class FrameProcessor {
 	ScheduledExecutorService fileWritingExecutor = Executors.newScheduledThreadPool(1);
@@ -32,7 +30,7 @@ public class FrameProcessor {
 	int slitWidth;
 	int imageWidth;
 	int startingPixel;
-	final LinkedBlockingQueue<PImage> slitQueue = new LinkedBlockingQueue<PImage>();
+	final LinkedBlockingQueue<Slit> slitQueue = new LinkedBlockingQueue<Slit>();
 	
 	public FrameProcessor() {
 		// register SCIFIO TIFF readers and writers for use with Java ImageIO
@@ -59,7 +57,7 @@ public class FrameProcessor {
 		initSlit = true;
 	}
 	
-	public void doProcessFrame(PApplet p, PImage frame, VideoMeta video, SlitLocations slitLocations) {
+	public void doProcessFrame(PApplet p, Frame frame, VideoMeta video, SlitLocations slitLocations) {
 		if (initSlit) {
 			initSlit = false;
 			
@@ -78,14 +76,15 @@ public class FrameProcessor {
 		}
 		
 		// grab a slit from the middle of the current video frame
-		PImage slit = p.createImage(tiffUpdater.getSlitWidth(), frame.height, RGB);
+		int slitWidth = tiffUpdater.getSlitWidth();
+		int slitHeight = frame.height;
 		float positionInVideo = video.timeSeconds() / video.duration();
 		int slitX = (int) round(frame.width * slitLocations.getSlitLocationNormalized(positionInVideo));
 		/* check if slit is too close to the edge */
-		if (slitX + slit.width > frame.width) {
-			slitX = frame.width - slit.width;
+		if (slitX + slitWidth > frame.width) {
+			slitX = frame.width - slitWidth;
 		}
-		slit.copy(frame, slitX, 0, slit.width, video.height(), 0, 0, slit.width, slit.height);
+		Slit slit = new Slit(slitWidth, slitHeight, slitX, frame);
 		slitQueue.add(slit);
 		//	LOG.debug("Q: " + video.time() + "/" + video.duration() + " queue size: " + slitQueue.size());
 	}
