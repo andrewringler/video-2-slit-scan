@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewringler.slitscan.Frame;
 import com.andrewringler.slitscan.FrameReady;
 import com.andrewringler.slitscan.Video2SlitScan;
 import com.andrewringler.slitscan.VideoWrapper;
@@ -41,7 +42,7 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		@Override
 		public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
 			PImageFromIntBuffer newFrame = new PImageFromIntBuffer(width, height, nativeBuffers[0].asIntBuffer());
-			frameReady.processFrame(newFrame);
+			frameReady.processFrame(new Frame(newFrame, null));
 		}
 	}
 	
