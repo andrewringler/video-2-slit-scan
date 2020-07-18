@@ -1,5 +1,11 @@
 package com.andrewringler.slitscan.jcodec;
 
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferInt;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.SinglePixelPackedSampleModel;
+
 import org.jcodec.common.model.ColorSpace;
 import org.jcodec.common.model.Picture;
 import org.jcodec.common.model.PictureHiBD;
@@ -52,6 +58,52 @@ public class JCodecPictureRGB {
 			return rgb;
 		}
 	}
+	
+	public Raster toHiBDRaster() {
+		int c = 3;
+		int[] srcData = pictureHiBD.getPlaneData(0);
+		final int[] bitMasks = new int[c];
+		for (int i = 0; i < c; i++) {
+			bitMasks[i] = 0xff << ((c - i - 1) * 8);
+		}
+		SampleModel model = new SinglePixelPackedSampleModel(DataBuffer.TYPE_INT, pictureHiBD.getWidth(), pictureHiBD.getHeight(), bitMasks);
+		DataBufferInt buffer = new DataBufferInt(pictureHiBD.getWidth() * pictureHiBD.getHeight(), c);
+		Raster raster = Raster.createWritableRaster(model, buffer, null);
+		
+		int[] data = buffer.getData();
+		for (int i = 0; i < data.length; i++) {
+			// Unshifting, since JCodec stores [0..255] -> [-128, 127]
+			// ???
+			//			data[i] = srcData[i];
+			// Unshifting, since JCodec stores [0..255] -> [-128, 127]
+			data[i] = (byte) (srcData[i] + 128);
+		}
+		return raster;
+	}
+	
+	//	class SixteenBitImage extends SimpleRenderedImage {
+	//		SixteenBitImage(int width, int height, SampleModel sampleModel) {
+	//			int c = 3;
+	//			this.minX = 0;
+	//			this.minY = 0;
+	//			this.width = width;
+	//			this.height = height;
+	//			this.tileGridXOffset = 0;
+	//			this.tileGridYOffset = 0;
+	//			this.tileWidth = 1;
+	//			this.tileHeight = 1;
+	//			this.colorModel = new SignedColorModel(64, DataBuffer.TYPE_INT, c);
+	//			final int[] bitMasks = new int[c];
+	//			for (int i = 0; i < c; i++) {
+	//				bitMasks[i] = 0xff << ((c - i - 1) * 8);
+	//			}
+	//			this.sampleModel = new SinglePixelPackedSampleModel(DataBuffer.TYPE_INT, width, height, bitMasks);
+	//		}
+	//		
+	//		public Raster getTile(int tileX, int tileY) {
+	//			return null;
+	//		}
+	//	}
 	
 	public JCodecPictureRGB(Picture picture) {
 		if (picture.isHiBD()) {

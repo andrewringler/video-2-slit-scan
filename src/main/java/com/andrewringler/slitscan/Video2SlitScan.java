@@ -123,7 +123,7 @@ public class Video2SlitScan extends PApplet {
 				loadingFirstFrame = false;
 				doPause = true;
 				ui.setVideoInfo(video.duration(), frame.width, frame.height, 60);
-				LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "]");
+				LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "], " + frame.getColorDepth());
 				return;
 			}
 			

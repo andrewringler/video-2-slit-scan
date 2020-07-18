@@ -16,7 +16,6 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import processing.core.PApplet;
-import processing.core.PConstants;
 import processing.core.PImage;
 
 public class UpdateTiffOnDisk implements Runnable {
@@ -26,13 +25,15 @@ public class UpdateTiffOnDisk implements Runnable {
 	private final int slitWidth;
 	private final int slitHeight;
 	private final PApplet p;
+	private final ColorDepth colorDepth;
 	
 	private int outputXOffsetNext = 0;
 	private boolean done = false;
 	private ScheduledFuture<?> renderedSlitsFuture;
 	
-	public UpdateTiffOnDisk(PApplet p, LinkedBlockingQueue<Slit> slitQueue, int startingPixel, String outputFileName, int outputFileWidth, int slitWidth, int slitHeight) {
+	public UpdateTiffOnDisk(PApplet p, ColorDepth colorDepth, LinkedBlockingQueue<Slit> slitQueue, int startingPixel, String outputFileName, int outputFileWidth, int slitWidth, int slitHeight) {
 		this.p = p;
+		this.colorDepth = colorDepth;
 		this.slitQueue = slitQueue;
 		this.outputFileWidth = outputFileWidth;
 		this.outputFileName = outputFileName;
@@ -66,24 +67,23 @@ public class UpdateTiffOnDisk implements Runnable {
 			batchImagePixelWidth = batchSize * slitWidth;
 		}
 		
-		PImage slitsBatchImage = p.createImage(batchImagePixelWidth, slitHeight, PConstants.RGB);
-		
-		for (int i = 0; i < batchSize; i++) {
-			slit = slitQueue.poll().getPImage();
-			slitsBatchImage.copy(slit, 0, 0, slit.width, slit.height, i * slitWidth, 0, slit.width, slit.height);
-		}
+		SlitBatchImage slitsBatchImage = new SlitBatchImage(slitQueue, colorDepth, slitWidth, batchImagePixelWidth, slitHeight);
 		
 		try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile)) {
 			ImageReader imageReader = ImageIO.getImageReaders(imageInputStream).next();
 			ImageWriter imageWriter = ImageIO.getImageWriter(imageReader);
 			try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputFile)) {
 				imageWriter.setOutput(imageOutputStream);
-				imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, slitsBatchImage.width, slitsBatchImage.height));
+				imageWriter.prepareReplacePixels(0, new Rectangle(outputXOffsetNext, 0, slitsBatchImage.getWidth(), slitsBatchImage.getHeight()));
 				ImageWriteParam param = imageWriter.getDefaultWriteParam();
 				param.setDestinationOffset(new Point(outputXOffsetNext, 0));
 				//				System.out.println("writing: [" + slitsBatchImage.width + "x" + slitsBatchImage.height + "] to (" + outputXOffsetNext + ",0)");
-				imageWriter.replacePixels((BufferedImage) slitsBatchImage.getNative(), param);
-				outputXOffsetNext += slitsBatchImage.width;
+				if (slitsBatchImage.isSixteenBit()) {
+					imageWriter.replacePixels(slitsBatchImage.getPicture().toHiBDRaster(), param);
+				} else {
+					imageWriter.replacePixels((BufferedImage) slitsBatchImage.getBufferedImage(), param);
+				}
+				outputXOffsetNext += slitsBatchImage.getWidth();
 			}
 		} catch (IOException e) {
 			System.out.println("unable to write: " + e.getMessage());
