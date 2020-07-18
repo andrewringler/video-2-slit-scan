@@ -43,12 +43,11 @@ public class VideoWrapperJCodec implements VideoWrapper {
 		File file = new File(absolutePath);
 		
 		try {
-			frameGrab = FrameGrab.createFrameGrab(NIOUtils.readableChannel(file));
+			frameGrab = FrameGrab.createFrameGrab(NIOUtils.readableChannel(file), false);
 			durationInSeconds = (float) frameGrab.getVideoTrack().getMeta().getTotalDuration();
 			totalFrames = frameGrab.getVideoTrack().getMeta().getTotalFrames();
 			width = frameGrab.getVideoTrack().getMeta().getVideoCodecMeta().getSize().getWidth();
 			height = frameGrab.getVideoTrack().getMeta().getVideoCodecMeta().getSize().getHeight();
-			LOG.info("Video meta: width=" + width + " height=" + height);
 		} catch (Exception e) {
 			LOG.error("Error trying to load video", e);
 		}
@@ -65,7 +64,7 @@ public class VideoWrapperJCodec implements VideoWrapper {
 						try {
 							picture = frameGrab.getNativeFrame();
 							if (picture != null) {
-								LOG.info("Frame meta: width=" + picture.getWidth() + " height=" + picture.getHeight() + " color=" + picture.getColor());
+								//								LOG.debug("Frame meta: width=" + picture.getWidth() + " height=" + picture.getHeight() + " color=" + picture.getColor());
 								currentFrame.incrementAndGet();
 								BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
 								frameReady.processFrame(new Frame(new PImage(bufferedImage), picture));

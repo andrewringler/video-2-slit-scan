@@ -18,10 +18,14 @@ import net.imagej.axis.Axes;
  * https://github.com/scifio/scifio-tutorials/blob/master/core/src/main/java/io/scif/tutorials/core/T1cReadingTilesGood.java
  */
 public class StreamingImageTools {
-	public static boolean createBlankImage(SCIFIO scifio, String outPath, int width, int height) {
+	public static boolean createBlankImage(SCIFIO scifio, String outPath, int width, int height, ColorDepth colorDepth) {
 		try {
 			// 3-channel RGB, a synthetic image, specified entirely by this string
-			final String sampleImage = "testImg&lengths=3," + width + "," + height + ",1&axes=Channel,X,Y,Time&planarDims=3.fake";
+			String sampleImage = "8bit-signed&pixelType=int8&lengths=3," + width + "," + height + ",1&axes=Channel,X,Y,Time&planarDims=3.fake";
+			if (colorDepth.isSixteenBit()) {
+				//				sampleImage = "16bit-unsigned&pixelType=uint16&lengths=3," + width + "," + height + ",1&axes=Channel,X,Y,Time&planarDims=3.fake";
+				sampleImage = "16bit-signed&pixelType=int16&lengths=3," + width + "," + height + ",1&axes=Channel,X,Y,Time&planarDims=3.fake";
+			}
 			
 			// Clear the file if it already exists.
 			final Location l = new Location(scifio.getContext(), outPath);

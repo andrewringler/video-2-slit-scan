@@ -63,14 +63,14 @@ public class FrameProcessor {
 			
 			// if output file does not exist, populate with blank image
 			if (!outputFile.exists()) {
-				createBlankImage(scifio, outputFile.getAbsolutePath(), imageWidth, frame.height);
+				createBlankImage(scifio, outputFile.getAbsolutePath(), imageWidth, frame.height, frame.getColorDepth());
 			}
 			
 			// cancel any previous rendering
 			if (tiffUpdater != null) {
 				tiffUpdater.cancel();
 			}
-			tiffUpdater = new UpdateTiffOnDisk(p, slitQueue, startingPixel, outputFile.getAbsolutePath(), imageWidth, slitWidth, frame.height);
+			tiffUpdater = new UpdateTiffOnDisk(p, frame.getColorDepth(), slitQueue, startingPixel, outputFile.getAbsolutePath(), imageWidth, slitWidth, frame.height);
 			ScheduledFuture<?> renderedSlitsFuture = fileWritingExecutor.scheduleWithFixedDelay(tiffUpdater, 2, 5, TimeUnit.SECONDS);
 			tiffUpdater.setFuture(renderedSlitsFuture);
 		}
