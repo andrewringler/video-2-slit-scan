@@ -7,7 +7,9 @@ import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewringler.slitscan.Dimensions;
 import com.andrewringler.slitscan.FrameReady;
+import com.andrewringler.slitscan.RotateVideo;
 import com.andrewringler.slitscan.Video2SlitScan;
 import com.andrewringler.slitscan.VideoWrapper;
 
@@ -30,8 +32,7 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	RV32BufferFormatCallback bufferFormat = new RV32BufferFormatCallback();
 	EmbeddedMediaPlayer m;
 	float durationSeconds = 0;
-	int width = 0;
-	int height = 0;
+	Dimensions videoDimensions = new Dimensions(0, 0);
 	int[] buffer = null;
 	volatile boolean ready = false;
 	volatile boolean playing = false;
@@ -40,8 +41,9 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	class SaveFrameCallback implements RenderCallback {
 		@Override
 		public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
-			PImageFromIntBuffer newFrame = new PImageFromIntBuffer(width, height, nativeBuffers[0].asIntBuffer());
-			frameReady.processFrame(newFrame);
+			PImageFromIntBuffer sourceFrame = new PImageFromIntBuffer(videoDimensions.width, videoDimensions.height, nativeBuffers[0].asIntBuffer());
+			//			PImageFromIntBuffer rotatedFrame = sourceFrame.rotate(rotateVideo);
+			frameReady.processFrame(sourceFrame);
 		}
 	}
 	
@@ -50,19 +52,24 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
 			if (buffer == null) {
 				buffer = new int[sourceWidth * sourceHeight];
-				width = sourceWidth;
-				height = sourceHeight;
+				videoDimensions = new Dimensions(sourceWidth, sourceHeight);
 			}
 			return new RV32BufferFormat(sourceWidth, sourceHeight);
 		}
 	}
 	
-	public VideoWrapperVLCJ(Video2SlitScan p, String absolutePath, FrameReady frameReady, boolean startPlaying) {
+	public VideoWrapperVLCJ(Video2SlitScan p, String absolutePath, FrameReady frameReady, boolean startPlaying, RotateVideo rotateVideo) {
 		this.p = p;
 		this.frameReady = frameReady;
 		this.playing = startPlaying;
 		
-		MediaPlayerFactory factory = new MediaPlayerFactory();
+		String[] mediaPlayerArgs = {};
+		if (rotateVideo.hasRotation()) {
+			// vlc --transform-type one of: 90,180,270,hflip,vflip
+			mediaPlayerArgs = new String[] { "--video-filter=transform", "--transform-type=" + rotateVideo.degreesString() };
+		}
+		
+		MediaPlayerFactory factory = new MediaPlayerFactory(mediaPlayerArgs);
 		m = factory.mediaPlayers().newEmbeddedMediaPlayer();
 		m.videoSurface().set(factory.videoSurfaces().newVideoSurface(bufferFormat, saveFrame, true));
 		
@@ -140,12 +147,12 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	
 	@Override
 	public int width() {
-		return width;
+		return videoDimensions.width;
 	}
 	
 	@Override
 	public int height() {
-		return height;
+		return videoDimensions.height;
 	}
 	
 	@Override
