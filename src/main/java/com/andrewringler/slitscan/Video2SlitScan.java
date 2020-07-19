@@ -162,7 +162,7 @@ public class Video2SlitScan extends PApplet {
 					videoFrameCount++;
 					doProcessFrame(frame);
 				}
-			}, true);
+			}, true, ui.getRotateVideo());
 		}
 	}
 	

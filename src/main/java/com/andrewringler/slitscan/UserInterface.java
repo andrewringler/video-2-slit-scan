@@ -1,5 +1,7 @@
 package com.andrewringler.slitscan;
 
+import static com.andrewringler.slitscan.RotateVideo.rotateVideo;
+
 import java.util.List;
 
 import controlP5.Button;
@@ -27,6 +29,7 @@ public class UserInterface {
 	private final Textfield videoFPSField;
 	private final Slider generationProgressSlider;
 	private final RadioButton playSpeed;
+	private final RadioButton rotateVideo;
 	private final Textfield outputFileLabel;
 	private final Textfield startPixelField;
 	private final Textfield imageWidthField;
@@ -58,7 +61,7 @@ public class UserInterface {
 		cp5.setFont(font);
 		
 		// Video load/setup
-		Group videoSettingsUI = cp5.addGroup("Video").setMoveable(true).setPosition(10, 30).setBackgroundHeight(165).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
+		Group videoSettingsUI = cp5.addGroup("Video").setMoveable(true).setPosition(10, 30).setBackgroundHeight(225).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
 		selectVideoFile = cp5.addButton("selectVideoFile").setLabel("Open video file").setColorBackground(p.color(255, 255, 0)).setColorLabel(p.color(0)).setPosition(10, 10).setSize(120, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
@@ -83,8 +86,12 @@ public class UserInterface {
 			}
 		});
 		
+		cp5.addTextlabel("rotateVideoLabel").setText("Rotate Video (re-Open video to take effect)").setPosition(6, 150).setSize(100, 20).setGroup(videoSettingsUI);
+		rotateVideo = cp5.addRadioButton("rotateVideo").setPosition(10, 170).setNoneSelectedAllowed(false).setItemsPerRow(4).setSpacingColumn(50).addItem("0°", 0).addItem("90°", 90).addItem("180°", 180).addItem("270°", 270).setGroup(videoSettingsUI);
+		rotateVideo.activate(0);
+		
 		// Slit scan setup/run
-		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 230).setBackgroundHeight(350).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
+		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 300).setBackgroundHeight(350).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
 		cp5.addTextlabel("playSpeedLabel").setText("Play Speed (use preview mode none with 2x,4x,8x)").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
 		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
 		playSpeed.activate(0);
@@ -232,6 +239,10 @@ public class UserInterface {
 	
 	public Integer getTotalVideoFrames() {
 		return Integer.valueOf(videoFrameCountField.getText());
+	}
+	
+	public RotateVideo getRotateVideo() {
+		return rotateVideo((int) rotateVideo.getValue());
 	}
 	
 	public void videoFileSelected(String videoFilePath) {
@@ -399,6 +410,7 @@ public class UserInterface {
 		imageHeightField.setUserInteraction(false);
 		generateSlitScanImageButton.setLock(true);
 		videoScrubber.setUserInteraction(false);
+		//		rotateVideo.setUserInteraction(true);
 		//		pauseGenerateSlitScanImageButton.setLock(false);
 	}
 	
