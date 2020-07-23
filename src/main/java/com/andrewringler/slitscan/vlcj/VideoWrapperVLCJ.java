@@ -21,6 +21,7 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
 public class VideoWrapperVLCJ implements VideoWrapper {
 	private static final Logger LOG = LoggerFactory.getLogger(VideoWrapperVLCJ.class);
@@ -53,8 +54,8 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 				width = sourceWidth;
 				height = sourceHeight;
 			}
-			//			return new RV32BufferFormat(sourceWidth, sourceHeight);
-			return new YUVABufferFormat(sourceWidth, sourceHeight);
+			return new RV32BufferFormat(sourceWidth, sourceHeight);
+			//			return new YUVABufferFormat(sourceWidth, sourceHeight);
 		}
 	}
 	
