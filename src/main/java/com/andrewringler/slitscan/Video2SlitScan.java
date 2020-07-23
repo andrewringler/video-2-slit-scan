@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
 import com.andrewringler.slitscan.jcodec.VideoWrapperJCodec;
+import com.andrewringler.slitscan.vlcj.VideoWrapperVLCJ;
 
 import processing.core.PApplet;
 import processing.core.PImage;
@@ -23,6 +24,7 @@ import processing.opengl.PGraphics2D;
 import processing.opengl.PJOGL;
 
 public class Video2SlitScan extends PApplet {
+	private static final boolean useJCodec = false;
 	private static final Logger LOG = LoggerFactory.getLogger(Video2SlitScan.class);
 	private static final String APP_NAME = "Video-2-Slit-Scan";
 	private static final String[] APP_ICON_FILENAMES = { "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png" };
@@ -153,8 +155,11 @@ public class Video2SlitScan extends PApplet {
 			
 			loadingFirstFrame = true;
 			
-			//			video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
-			video = new VideoWrapperJCodec(videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
+			if (useJCodec) {
+				video = new VideoWrapperJCodec(videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
+			} else {
+				video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
+			}
 		}
 	}
 	
