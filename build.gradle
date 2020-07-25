@@ -15,7 +15,7 @@ applicationDefaultJvmArgs = ["-Xmx2048M"]
 mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
 
 group = 'com.andrewringler.slitscan'
-version = '0.2.4'
+version = '0.2.5'
 
 repositories {
     flatDir {
@@ -45,7 +45,7 @@ dependencies {
             "com.google.guava:guava:20.0",
             "org.slf4j:slf4j-api:1.6.1",
             "io.scif:scifio:0.32.0",
-            'uk.co.caprica:vlcj:4.1.0',
+            'uk.co.caprica:vlcj:4.4.4',
             ':jcodec-0.2.6-SNAPSHOT@jar',
             ':jcodec-javase-0.2.6-SNAPSHOT@jar'
             
