@@ -38,7 +38,7 @@ public class SlitLocations {
 			
 			int slitWidth = ui.getSlitWidth();
 			float maxSlitLocation = ((float) ui.getVideoWidth() - (float) slitWidth) / (float) ui.getVideoWidth();
-			float newSlitLocation = (float) p.mouseX / (float) ui.getVideoDrawWidth();
+			float newSlitLocation = (float) (p.mouseX - p.previewFrameOffsets.x) / (float) ui.getVideoDrawWidth();
 			if (newSlitLocation > maxSlitLocation) {
 				slitLocationUI = maxSlitLocation;
 			} else if (newSlitLocation < 0) {
@@ -57,7 +57,7 @@ public class SlitLocations {
 			return;
 		}
 		
-		int slitLocationX = (int) (slitLocationUI * ui.getVideoDrawWidth());
+		int slitLocationX = (int) (slitLocationUI * ui.getVideoDrawWidth()) + p.previewFrameOffsets.x;
 		int slitWidth = ui.getSlitWidth();
 		if (p.mouseX < slitLocationX + slitWidth + 5 && p.mouseX > slitLocationX - 5) {
 			draggingSlit = true;
@@ -142,7 +142,8 @@ public class SlitLocations {
 			p.noFill();
 			p.strokeWeight(1);
 			p.stroke(255);
-			int scaledSlitLocation = round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
+			Position slitDrawOffsets = p.previewFrameOffsets;
+			int scaledSlitLocation = slitDrawOffsets.x + round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
 			//			LOG.info("" + scaledSlitLocation + " " + positionInVideo + " " + ui.getVideoDrawWidth());
 			patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
 			p.stroke(0);

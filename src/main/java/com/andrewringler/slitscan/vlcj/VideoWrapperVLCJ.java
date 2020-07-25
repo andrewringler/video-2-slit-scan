@@ -1,17 +1,22 @@
 package com.andrewringler.slitscan.vlcj;
 
+import static com.andrewringler.slitscan.ImageTransforms.rotateImage;
 import static uk.co.caprica.vlcj.media.MediaParsedStatus.DONE;
 
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewringler.slitscan.Dimensions;
 import com.andrewringler.slitscan.Frame;
 import com.andrewringler.slitscan.FrameReady;
+import com.andrewringler.slitscan.RotateVideo;
 import com.andrewringler.slitscan.Video2SlitScan;
 import com.andrewringler.slitscan.VideoWrapper;
 
+import processing.core.PImage;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.media.Media;
 import uk.co.caprica.vlcj.media.MediaEventAdapter;
@@ -31,18 +36,22 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	RV32BufferFormatCallback bufferFormat = new RV32BufferFormatCallback();
 	EmbeddedMediaPlayer m;
 	float durationSeconds = 0;
-	int width = 0;
-	int height = 0;
+	Dimensions videoDimensions = new Dimensions(0, 0);
 	int[] buffer = null;
 	volatile boolean ready = false;
 	volatile boolean playing = false;
 	private final FrameReady frameReady;
+	private final RotateVideo rotateVideo;
 	
 	class SaveFrameCallback implements RenderCallback {
 		@Override
 		public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
-			PImageFromIntBuffer newFrame = new PImageFromIntBuffer(width, height, nativeBuffers[0].asIntBuffer());
-			frameReady.processFrame(new Frame(newFrame, null));
+			PImageFromIntBuffer sourceFrame = new PImageFromIntBuffer(videoDimensions.width, videoDimensions.height, nativeBuffers[0].asIntBuffer());
+			if (rotateVideo.hasRotation()) {
+				frameReady.processFrame(new Frame(new PImage(rotateImage((BufferedImage) sourceFrame.getNative(), rotateVideo.degrees())), null));
+			} else {
+				frameReady.processFrame(new Frame(sourceFrame, null));
+			}
 		}
 	}
 	
@@ -51,20 +60,32 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
 			if (buffer == null) {
 				buffer = new int[sourceWidth * sourceHeight];
-				width = sourceWidth;
-				height = sourceHeight;
+				videoDimensions = new Dimensions(sourceWidth, sourceHeight);
 			}
 			return new RV32BufferFormat(sourceWidth, sourceHeight);
 			//			return new YUVABufferFormat(sourceWidth, sourceHeight);
 		}
+		
+		@Override
+		public void allocatedBuffers(ByteBuffer[] buffers) {
+		}
 	}
 	
-	public VideoWrapperVLCJ(Video2SlitScan p, String absolutePath, FrameReady frameReady, boolean startPlaying) {
+	public VideoWrapperVLCJ(Video2SlitScan p, String absolutePath, FrameReady frameReady, boolean startPlaying, RotateVideo rotateVideo) {
 		this.p = p;
 		this.frameReady = frameReady;
 		this.playing = startPlaying;
+		this.rotateVideo = rotateVideo;
 		
-		MediaPlayerFactory factory = new MediaPlayerFactory();
+		String[] mediaPlayerArgs = {};
+		// BUG: vlc is error-ing trying to rotate 6144 × 10 ProRes video when applying a transform
+		// we'll do the rotation ourselves for now
+		//		if (rotateVideo.hasRotation()) {
+		//			// vlc --transform-type one of: 90,180,270,hflip,vflip
+		//			mediaPlayerArgs = new String[] { "--video-filter=transform", "--transform-type=" + rotateVideo.degreesString() };
+		//		}
+		
+		MediaPlayerFactory factory = new MediaPlayerFactory(mediaPlayerArgs);
 		m = factory.mediaPlayers().newEmbeddedMediaPlayer();
 		m.videoSurface().set(factory.videoSurfaces().newVideoSurface(bufferFormat, saveFrame, true));
 		
@@ -88,6 +109,7 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	
 	@Override
 	public void stop() {
+		LOG.info("do stop");
 		if (ready()) {
 			playing = false;
 			m.controls().stop();
@@ -100,10 +122,12 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	}
 	
 	public void volume(int i) {
+		// we don't need volume
 	}
 	
 	@Override
 	public void play() {
+		LOG.info("do play");
 		playing = true;
 		if (ready()) {
 			m.controls().play();
@@ -120,6 +144,7 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	
 	@Override
 	public void pause() {
+		LOG.info("do pause");
 		if (ready()) {
 			m.controls().pause();
 		}
@@ -127,6 +152,7 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	
 	@Override
 	public void jump(float f) {
+		LOG.info("do jump: " + f);
 		if (ready()) {
 			m.controls().setTime(Math.round(f * 1000.0));
 		}
@@ -142,12 +168,12 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	
 	@Override
 	public int width() {
-		return width;
+		return rotateVideo.rotatedDimensions(videoDimensions).getWidth();
 	}
 	
 	@Override
 	public int height() {
-		return height;
+		return rotateVideo.rotatedDimensions(videoDimensions).getHeight();
 	}
 	
 	@Override

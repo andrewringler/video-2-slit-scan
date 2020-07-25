@@ -33,6 +33,7 @@ public class Video2SlitScan extends PApplet {
 	File videoFileName = null;
 	File outputFile = null;
 	PImage previewFrame;
+	Position previewFrameOffsets = new Position(0, 0);
 	boolean loadingFirstFrame = false;
 	boolean isPausedGeneratingSlice = false;
 	boolean doPause = false;
@@ -141,6 +142,11 @@ public class Video2SlitScan extends PApplet {
 		} else {
 			videoFileName = selection;
 			ui.videoFileSelected(videoFileName.getAbsolutePath());
+			ui.updateProgress(0);
+			ui.updatePlayhead(0);
+			previewFrame = null;
+			previewFrameTimecode = 0;
+			generatingSlitScanImage = false;
 			
 			LOG.info("video file selection: loading video '" + videoFileName.getAbsolutePath() + "'");
 			// reset keyframes
@@ -155,10 +161,11 @@ public class Video2SlitScan extends PApplet {
 			
 			loadingFirstFrame = true;
 			
+			LOG.info("starting initial video play");
 			if (useJCodec) {
 				video = new VideoWrapperJCodec(videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
 			} else {
-				video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
+				video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
 			}
 		}
 	}
@@ -171,7 +178,10 @@ public class Video2SlitScan extends PApplet {
 			/* skip preview frame generation for performance */
 			if (!ui.previewMode().equals(PreviewMode.NONE)) {
 				if (previewFrame == null) {
-					previewFrame = createImage((int) (frame.width * scalingFactor), (int) (frame.height * scalingFactor), RGB);
+					int previewFrameWidth = (int) (frame.width * scalingFactor);
+					int previewFrameHeight = (int) (frame.height * scalingFactor);
+					LOG.info("Frame: " + frame.width + "x" + frame.height + " " + "preview: " + previewFrameWidth + "x" + previewFrameHeight);
+					previewFrame = createImage(previewFrameWidth, previewFrameHeight, RGB);
 				}
 				updatePreviewFrame(frame);
 			}
@@ -182,7 +192,9 @@ public class Video2SlitScan extends PApplet {
 	public void generateSlitScan() {
 		if (!generatingSlitScanImage) {
 			if (video != null && outputFile != null) {
+				LOG.info("Starting generating slit scan");
 				generatingSlitScanImage = true;
+				timeOfLastVideoFrameRead = 0;
 				ui.startGeneratingSlitScan();
 				
 				frameProcessor.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
@@ -217,6 +229,8 @@ public class Video2SlitScan extends PApplet {
 		if (generatingSlitScanImage && timeOfLastVideoFrameRead > 0) {
 			if (millis() - timeOfLastVideoFrameRead > 5000) {
 				println("taking too long to read new frame, canceling video play");
+				generatingSlitScanImage = false;
+				doPause = true;
 				frameProcessor.done();
 			}
 		}
@@ -230,7 +244,12 @@ public class Video2SlitScan extends PApplet {
 				if (ui.getVideoDrawHeight() < height) {
 					yOffset = (int) Math.round((height - ui.getVideoDrawHeight()) / 2.0);
 				}
-				image(previewFrame, 0, yOffset, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
+				int xOffset = 0;
+				if (ui.getVideoDrawWidth() < width) {
+					xOffset = (int) Math.round((width - ui.getVideoDrawWidth()) / 2.0);
+				}
+				previewFrameOffsets = new Position(xOffset, yOffset);
+				image(previewFrame, xOffset, yOffset, ui.getVideoDrawWidth(), ui.getVideoDrawHeight());
 			} else if (ui.previewModeSlit()) {
 				float positionInVideo = previewFrameTimecode / video.duration();
 				float slitLocationNormalized = slitLocations.getSlitLocationNormalized(positionInVideo);
@@ -268,7 +287,7 @@ public class Video2SlitScan extends PApplet {
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
 			float doScrubDelta = 0.5f;
 			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > doScrubDelta) {
-				println("scrubbing");
+				LOG.info("scrubbing");
 				if (ui.getVideoPlayhead() == video.duration()) {
 					video.jump(video.duration() - doScrubDelta);
 				} else {
