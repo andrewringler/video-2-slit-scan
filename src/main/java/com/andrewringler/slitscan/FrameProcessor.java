@@ -57,7 +57,8 @@ public class FrameProcessor {
 		initSlit = true;
 	}
 	
-	public void doProcessFrame(PApplet p, Frame frame, VideoMeta video, SlitLocations slitLocations) {
+	public void doProcessFrame(PApplet p, Frame frame, SlitLocations slitLocations) {
+		VideoMeta video = frame.getVideoMeta();
 		if (initSlit) {
 			initSlit = false;
 			

@@ -8,6 +8,7 @@ import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.ImageIcon;
 
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
+import com.andrewringler.slitscan.ffmpeg.VideoWrapperFFMPEG;
 import com.andrewringler.slitscan.jcodec.VideoWrapperJCodec;
 import com.andrewringler.slitscan.vlcj.VideoWrapperVLCJ;
 
@@ -42,11 +44,13 @@ public class Video2SlitScan extends PApplet {
 	int lastDrawUpdate = 0;
 	int timeOfLastVideoFrameRead = 0;
 	
-	final FrameProcessor frameProcessor;
+	final FrameProcessor frameProcessorRealtime;
+	ScrubbingHandler scrubbingHandler;
 	
 	// Slit generation
 	boolean generatingSlitScanImage = false;
 	boolean generatingSlicePause = false;
+	AtomicBoolean generatingSlitScanImageDoHandleCompletion = new AtomicBoolean(false);
 	SlitLocations slitLocations;
 	
 	private UserInterface ui;
@@ -55,7 +59,7 @@ public class Video2SlitScan extends PApplet {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
 		LOG.info("video-2-slit-scan launched");
 		
-		frameProcessor = new FrameProcessor();
+		frameProcessorRealtime = new FrameProcessor();
 		
 		// Set App icons for Mac
 		// 16, 32, 48, 64, 128, 256, 512
@@ -85,6 +89,7 @@ public class Video2SlitScan extends PApplet {
 		
 		ui = new UserInterface(this);
 		slitLocations = new SlitLocations(this, ui, 0.5f);
+		scrubbingHandler = new ScrubbingHandler(this, ui);
 		
 		setNewOutputFile();
 	}
@@ -130,8 +135,8 @@ public class Video2SlitScan extends PApplet {
 				return;
 			}
 			
-			if (generatingSlitScanImage) {
-				frameProcessor.doProcessFrame(Video2SlitScan.this, frame, video, slitLocations);
+			if (generatingSlitScanImage && ui.colorDepth().isEightBit()) {
+				frameProcessorRealtime.doProcessFrame(Video2SlitScan.this, frame, slitLocations);
 			}
 		}
 	}
@@ -197,12 +202,24 @@ public class Video2SlitScan extends PApplet {
 				timeOfLastVideoFrameRead = 0;
 				ui.startGeneratingSlitScan();
 				
-				frameProcessor.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
+				if (ui.colorDepth().isSixteenBit()) {
+					// generate 16-bit ffmpeg slit-scan
+					String outputFileString = outputFile.toString();
+					File outputFileSixteenBit = new File(outputFileString.substring(0, outputFileString.length() - 4) + "16bit.tif");
+					new VideoWrapperFFMPEG(this, videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
+						@Override
+						public void run() {
+							generatingSlitScanImageDoHandleCompletion.set(true);
+						}
+					});
+				} else {
+					frameProcessorRealtime.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
+					video.speed(ui.getPlaySpeed());
+					video.jump(0);
+					video.play();
+					previewFrameTimecode = 0;
+				}
 				
-				video.speed(ui.getPlaySpeed());
-				video.jump(0);
-				video.play();
-				previewFrameTimecode = 0;
 			} else {
 				LOG.info("cannot generate slit scan: no video loaded");
 			}
@@ -226,12 +243,12 @@ public class Video2SlitScan extends PApplet {
 	public void draw() {
 		background(220, 242, 254);
 		
-		if (generatingSlitScanImage && timeOfLastVideoFrameRead > 0) {
+		if (generatingSlitScanImage && ui.colorDepth().isEightBit() && timeOfLastVideoFrameRead > 0) {
 			if (millis() - timeOfLastVideoFrameRead > 5000) {
 				println("taking too long to read new frame, canceling video play");
 				generatingSlitScanImage = false;
 				doPause = true;
-				frameProcessor.done();
+				frameProcessorRealtime.done();
 			}
 		}
 		
@@ -268,16 +285,16 @@ public class Video2SlitScan extends PApplet {
 			doPause = false;
 		}
 		
-		if (doResume && video != null && generatingSlitScanImage) {
+		if (doResume && video != null && generatingSlitScanImage && ui.colorDepth().isEightBit()) {
 			// resume after pause
 			video.play();
 			doResume = true;
 		}
 		
-		if (generatingSlitScanImage) {
-			ui.updateProgress(frameProcessor.getProgress() * 100f);
+		if (generatingSlitScanImage && ui.colorDepth().isEightBit()) {
+			ui.updateProgress(frameProcessorRealtime.getProgress() * 100f);
 			ui.updatePlayhead(previewFrameTimecode);
-			if (frameProcessor.isDone()) {
+			if (frameProcessorRealtime.isDone()) {
 				generatingSlitScanImage = false;
 				ui.doneGeneratingSlitScan();
 				
@@ -285,19 +302,15 @@ public class Video2SlitScan extends PApplet {
 				setNewOutputFile();
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
-			float doScrubDelta = 0.5f;
-			if (abs(ui.getVideoPlayhead() - previewFrameTimecode) > doScrubDelta) {
-				LOG.info("scrubbing");
-				if (ui.getVideoPlayhead() == video.duration()) {
-					video.jump(video.duration() - doScrubDelta);
-				} else {
-					video.jump(ui.getVideoPlayhead());
-				}
-				video.play();
-			} else {
-				ui.doneScrubbing();
-				video.pause();
-			}
+			scrubbingHandler.handleScrub(video);
+		}
+		
+		if (generatingSlitScanImageDoHandleCompletion.compareAndSet(true, false)) {
+			generatingSlitScanImage = false;
+			ui.doneGeneratingSlitScan();
+			
+			/* pick a new file so we don't overwrite it */
+			setNewOutputFile();
 		}
 	}
 	
@@ -340,7 +353,7 @@ public class Video2SlitScan extends PApplet {
 			video.stop();
 		}
 		video = null;
-		frameProcessor.cleanup();
+		frameProcessorRealtime.cleanup();
 	}
 	
 	public void dispose() {

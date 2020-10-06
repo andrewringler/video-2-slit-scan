@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.andrewringler.slitscan.Frame;
 import com.andrewringler.slitscan.FrameReady;
+import com.andrewringler.slitscan.VideoMeta;
 import com.andrewringler.slitscan.VideoWrapper;
 
 import processing.core.PImage;
@@ -67,7 +68,8 @@ public class VideoWrapperJCodec implements VideoWrapper {
 								//								LOG.debug("Frame meta: width=" + picture.getWidth() + " height=" + picture.getHeight() + " color=" + picture.getColor());
 								currentFrame.incrementAndGet();
 								BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
-								frameReady.processFrame(new Frame(new PImage(bufferedImage), picture));
+								VideoMeta videoMeta = new VideoMeta(duration(), timeSeconds(), width(), height());
+								frameReady.processFrame(new Frame(new PImage(bufferedImage), picture, videoMeta));
 							}
 						} catch (IOException e) {
 							// nothing
@@ -141,5 +143,15 @@ public class VideoWrapperJCodec implements VideoWrapper {
 	@Override
 	public void speed(float playSpeed) {
 		/* nothing to do, jcodec is always reading at top speed */
+	}
+	
+	@Override
+	public int widthDisplay() {
+		return width;
+	}
+	
+	@Override
+	public int heightDisplay() {
+		return height;
 	}
 }

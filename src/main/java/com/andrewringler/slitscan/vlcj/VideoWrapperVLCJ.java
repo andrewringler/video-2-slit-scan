@@ -14,6 +14,7 @@ import com.andrewringler.slitscan.Frame;
 import com.andrewringler.slitscan.FrameReady;
 import com.andrewringler.slitscan.RotateVideo;
 import com.andrewringler.slitscan.Video2SlitScan;
+import com.andrewringler.slitscan.VideoMeta;
 import com.andrewringler.slitscan.VideoWrapper;
 
 import processing.core.PImage;
@@ -21,6 +22,7 @@ import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.media.Media;
 import uk.co.caprica.vlcj.media.MediaEventAdapter;
 import uk.co.caprica.vlcj.media.MediaParsedStatus;
+import uk.co.caprica.vlcj.media.VideoTrackInfo;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat;
@@ -42,15 +44,17 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	volatile boolean playing = false;
 	private final FrameReady frameReady;
 	private final RotateVideo rotateVideo;
+	Dimensions videoDimensionsDisplay = new Dimensions(0, 0);
 	
 	class SaveFrameCallback implements RenderCallback {
 		@Override
 		public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
 			PImageFromIntBuffer sourceFrame = new PImageFromIntBuffer(videoDimensions.width, videoDimensions.height, nativeBuffers[0].asIntBuffer());
+			VideoMeta videoMeta = new VideoMeta(duration(), timeSeconds(), width(), height());
 			if (rotateVideo.hasRotation()) {
-				frameReady.processFrame(new Frame(new PImage(rotateImage((BufferedImage) sourceFrame.getNative(), rotateVideo.degrees())), null));
+				frameReady.processFrame(new Frame(new PImage(rotateImage((BufferedImage) sourceFrame.getNative(), rotateVideo.degrees())), null, videoMeta));
 			} else {
-				frameReady.processFrame(new Frame(sourceFrame, null));
+				frameReady.processFrame(new Frame(sourceFrame, null, videoMeta));
 			}
 		}
 	}
@@ -94,6 +98,10 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 			public void mediaParsedChanged(Media media, MediaParsedStatus newStatus) {
 				if (newStatus == DONE && media.info().videoTracks().size() > 0) {
 					ready = true;
+					VideoTrackInfo videoTrackInfo = media.info().videoTracks().get(0);
+					int displayWidth = videoTrackInfo.width();
+					int displayHeight = videoTrackInfo.height();
+					videoDimensionsDisplay = new Dimensions(displayWidth, displayHeight);
 					durationSeconds = (float) ((float) media.info().duration() / 1000.0);
 					if (playing) {
 						play();
@@ -112,7 +120,11 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		LOG.info("do stop");
 		if (ready()) {
 			playing = false;
-			m.controls().stop();
+			try {
+				m.controls().stop();
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 	}
 	
@@ -130,14 +142,22 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		LOG.info("do play");
 		playing = true;
 		if (ready()) {
-			m.controls().play();
+			try {
+				m.controls().play();
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 	}
 	
 	@Override
 	public float duration() {
 		if (ready()) {
-			return durationSeconds;
+			try {
+				return durationSeconds;
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 		return 0;
 	}
@@ -146,7 +166,11 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	public void pause() {
 		LOG.info("do pause");
 		if (ready()) {
-			m.controls().pause();
+			try {
+				m.controls().pause();
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 	}
 	
@@ -154,14 +178,22 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	public void jump(float f) {
 		LOG.info("do jump: " + f);
 		if (ready()) {
-			m.controls().setTime(Math.round(f * 1000.0));
+			try {
+				m.controls().setTime(Math.round(f * 1000.0));
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 	}
 	
 	@Override
 	public float timeSeconds() {
 		if (ready()) {
-			return m.status().position() * duration();
+			try {
+				return m.status().position() * duration();
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 		return 0;
 	}
@@ -176,10 +208,22 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		return rotateVideo.rotatedDimensions(videoDimensions).getHeight();
 	}
 	
+	public int widthDisplay() {
+		return rotateVideo.rotatedDimensions(videoDimensionsDisplay).getWidth();
+	}
+	
+	public int heightDisplay() {
+		return rotateVideo.rotatedDimensions(videoDimensionsDisplay).getHeight();
+	}
+	
 	@Override
 	public void speed(float playSpeed) {
 		if (ready()) {
-			m.controls().setRate(playSpeed);
+			try {
+				m.controls().setRate(playSpeed);
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 	}
 	

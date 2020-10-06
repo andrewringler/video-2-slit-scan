@@ -1,6 +1,6 @@
 package com.andrewringler.slitscan;
 
-public interface VideoWrapper extends VideoMeta {
+public interface VideoWrapper {
 	
 	void stop();
 	
@@ -15,5 +15,17 @@ public interface VideoWrapper extends VideoMeta {
 	void volume(int i);
 	
 	void speed(float playSpeed);
+	
+	float duration();
+	
+	float timeSeconds();
+	
+	int width();
+	
+	int height();
+	
+	int widthDisplay();
+	
+	int heightDisplay();
 	
 }

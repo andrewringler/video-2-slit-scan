@@ -1,11 +1,31 @@
 package com.andrewringler.slitscan;
 
-public interface VideoMeta {
-	float duration();
+public class VideoMeta {
+	final float duration;
+	final float timeSeconds;
+	final int width;
+	final int height;
 	
-	float timeSeconds();
+	public VideoMeta(float duration, float timeSeconds, int width, int height) {
+		this.duration = duration;
+		this.timeSeconds = timeSeconds;
+		this.width = width;
+		this.height = height;
+	}
 	
-	int width();
+	public float duration() {
+		return duration;
+	}
 	
-	int height();
+	public float timeSeconds() {
+		return timeSeconds;
+	}
+	
+	public int width() {
+		return width;
+	}
+	
+	public int height() {
+		return height;
+	}
 }
