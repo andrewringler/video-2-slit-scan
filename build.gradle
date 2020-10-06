@@ -19,7 +19,7 @@ version = '0.2.5'
 
 repositories {
     flatDir {
-        dirs 'lib', 'lib/p3', 'lib/controlP5', 'lib/jcodec'
+        dirs 'lib', 'lib/p3', 'lib/controlP5', 'lib/jcodec', 'lib/ffmpeg-natives'
     }
  	maven {
         url "http://dev.loci.wisc.edu/maven2/releases/"
@@ -47,7 +47,8 @@ dependencies {
             "io.scif:scifio:0.32.0",
             'uk.co.caprica:vlcj:4.4.4',
             ':jcodec-0.2.6-SNAPSHOT@jar',
-            ':jcodec-javase-0.2.6-SNAPSHOT@jar'
+            ':jcodec-javase-0.2.6-SNAPSHOT@jar',
+            'com.github.kokorin.jaffree:jaffree:0.9.3'
             
     runtime "ch.qos.logback:logback-classic:1.0.9",
             "io.scif:scifio:0.32.0",

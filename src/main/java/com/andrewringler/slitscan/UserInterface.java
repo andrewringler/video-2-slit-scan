@@ -30,6 +30,7 @@ public class UserInterface {
 	private final Slider generationProgressSlider;
 	private final RadioButton playSpeed;
 	private final RadioButton rotateVideo;
+	private final RadioButton colorDepth;
 	private final Textfield outputFileLabel;
 	private final Textfield startPixelField;
 	private final Textfield imageWidthField;
@@ -51,9 +52,11 @@ public class UserInterface {
 	private boolean scrubbing = false;
 	private int videoScrubberYOffset;
 	public PFont robotoMono;
+	private long lastUserScrubMillis;
 	
 	public UserInterface(Video2SlitScan p) {
 		this.p = p;
+		lastUserScrubMillis = p.millis();
 		cp5 = new ControlP5(p);
 		
 		robotoMono = p.createFont("RobotoMono-Medium", 10, true);
@@ -61,7 +64,7 @@ public class UserInterface {
 		cp5.setFont(font);
 		
 		// Video load/setup
-		Group videoSettingsUI = cp5.addGroup("Video").setMoveable(true).setPosition(10, 30).setBackgroundHeight(225).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
+		Group videoSettingsUI = cp5.addGroup("Video").setMoveable(true).setPosition(10, 30).setBackgroundHeight(205).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
 		selectVideoFile = cp5.addButton("selectVideoFile").setLabel("Open video file").setColorBackground(p.color(255, 255, 0)).setColorLabel(p.color(0)).setPosition(10, 10).setSize(120, 20).setGroup(videoSettingsUI).onClick(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent arg0) {
@@ -91,7 +94,7 @@ public class UserInterface {
 		rotateVideo.activate(0);
 		
 		// Slit scan setup/run
-		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 300).setBackgroundHeight(350).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
+		Group slitGenerationUI = cp5.addGroup("Slit-Scan").setMoveable(true).setPosition(10, 275).setBackgroundHeight(350).setWidth(400).setBackgroundColor(p.color(30, 30, 30, 240)).setBarHeight(20);
 		cp5.addTextlabel("playSpeedLabel").setText("Play Speed (use preview mode none with 2x,4x,8x)").setPosition(6, 10).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
 		playSpeed = cp5.addRadioButton("chooseRenderSpeed").setPosition(10, 25).setNoneSelectedAllowed(true).setItemsPerRow(4).setSpacingColumn(20).addItem("1x", 1).addItem("2x", 2).addItem("4x", 4).addItem("8x", 8).setGroup(slitGenerationUI);
 		playSpeed.activate(0);
@@ -167,10 +170,14 @@ public class UserInterface {
 		choosePreviewMode.activate(0);
 		
 		cp5.addTextlabel("slitSelectionModeLabel").setText("Slit Location").setPosition(6, 200).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
-		slitSelectionMode = cp5.addRadioButton("slitSelectionMode").setPosition(10, 215).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Fixed", 1).addItem("Keyframes", 2).setGroup(slitGenerationUI);
+		slitSelectionMode = cp5.addRadioButton("slitSelectionMode").setPosition(10, 215).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Fixed", 1).addItem("Keyframes (8-bit mode only)", 2).setGroup(slitGenerationUI);
 		slitSelectionMode.activate(0);
 		
 		cp5.addLabel("a: add keyframe, d: delete keyframe").setPosition(6, 230).setGroup(slitGenerationUI);
+		
+		cp5.addTextlabel("colorDepthLabel").setText("Color Depth (bits-per-channel)").setPosition(6, 250).setSize(100, 20).setGroup(slitGenerationUI);
+		colorDepth = cp5.addRadioButton("colorDepth").setPosition(10, 265).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("8-bit", 8).addItem("16-bit ie 48bit-RGB", 16).setGroup(slitGenerationUI);
+		colorDepth.activate(0);
 		
 		generateSlitScanImageButton = cp5.addButton("generateSlitScanImageButton").setLabel("Generate slit-scan image").setPosition(10, 300).setSize(200, 20).setGroup(slitGenerationUI).onClick(new CallbackListener() {
 			@Override
@@ -209,6 +216,7 @@ public class UserInterface {
 	}
 	
 	private void checkScrubbing() {
+		lastUserScrubMillis = p.millis();
 		if (!p.generatingSlitScanImage) {
 			scrubbing = true;
 		}
@@ -280,6 +288,10 @@ public class UserInterface {
 	
 	public Integer getImageWidth() {
 		return Integer.valueOf(imageWidthField.getText());
+	}
+	
+	public Integer getImageHeight() {
+		return Integer.valueOf(imageHeightField.getText());
 	}
 	
 	public int getSlitWidth() {
@@ -359,6 +371,10 @@ public class UserInterface {
 		return videoScrubber.getValue();
 	}
 	
+	public float getVideoDuration() {
+		return videoFileDuration.getValue();
+	}
+	
 	public void setVideoPlayhead(float newVideoPlayhead) {
 		videoScrubber.setValue(newVideoPlayhead);
 		checkScrubbing();
@@ -394,6 +410,17 @@ public class UserInterface {
 	
 	public int getVideoWidth() {
 		return videoWidth;
+	}
+	
+	public long lastUserScrubMillis() {
+		return lastUserScrubMillis;
+	}
+	
+	public ColorDepth colorDepth() {
+		if (colorDepth.getValue() == 16) {
+			return ColorDepth.SIXTEEN_BIT;
+		}
+		return ColorDepth.EIGHT_BIT;
 	}
 	
 	public void startGeneratingSlitScan() {

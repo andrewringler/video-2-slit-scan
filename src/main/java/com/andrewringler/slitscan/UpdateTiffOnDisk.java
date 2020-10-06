@@ -16,7 +16,6 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import processing.core.PApplet;
-import processing.core.PImage;
 
 public class UpdateTiffOnDisk implements Runnable {
 	private final LinkedBlockingQueue<Slit> slitQueue;
@@ -24,7 +23,6 @@ public class UpdateTiffOnDisk implements Runnable {
 	private final String outputFileName;
 	private final int slitWidth;
 	private final int slitHeight;
-	private final PApplet p;
 	private final ColorDepth colorDepth;
 	
 	private int outputXOffsetNext = 0;
@@ -32,7 +30,6 @@ public class UpdateTiffOnDisk implements Runnable {
 	private ScheduledFuture<?> renderedSlitsFuture;
 	
 	public UpdateTiffOnDisk(PApplet p, ColorDepth colorDepth, LinkedBlockingQueue<Slit> slitQueue, int startingPixel, String outputFileName, int outputFileWidth, int slitWidth, int slitHeight) {
-		this.p = p;
 		this.colorDepth = colorDepth;
 		this.slitQueue = slitQueue;
 		this.outputFileWidth = outputFileWidth;
@@ -52,7 +49,6 @@ public class UpdateTiffOnDisk implements Runnable {
 			return;
 		}
 		
-		PImage slit;
 		File outputFile = new File(outputFileName);
 		int batchSize = slitQueue.size();
 		int batchImagePixelWidth = batchSize * slitWidth;
