@@ -33,8 +33,7 @@ public class VideoWrapperFFMPEG {
 	private final FFmpeg ffmpeg;
 	private final Path tempDir;
 	private final ExecutorService playThread = Executors.newFixedThreadPool(1);
-	private final String userDir = System.getProperty("user.dir");
-	private final Path ffmpegBin = Paths.get(userDir + "/data/ffmpeg-natives");
+	private final Path ffmpegBin;
 	private final ExecutorService frameSamplingDone = Executors.newFixedThreadPool(1);
 	private final File outputFileSixteenBit;
 	
@@ -52,6 +51,7 @@ public class VideoWrapperFFMPEG {
 		this.done = done;
 		
 		try {
+			ffmpegBin = Paths.get(p.dataPath("") + "/ffmpeg-natives");
 			tempDir = Files.createTempDirectory("ffmpeg");
 			Path videoPath = Paths.get(absolutePath);
 			outputPath = Paths.get(tempDir.toString(), "/frame_%09d.tiff");
@@ -131,6 +131,7 @@ public class VideoWrapperFFMPEG {
 							
 							// delete temp directory
 							Files.walk(tempDir).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+							tempDir.toFile().delete();
 						}
 						// TODO handle 1 frame
 						// TODO throw on 0 frames?
