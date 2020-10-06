@@ -34,7 +34,7 @@ public class VideoWrapperFFMPEG {
 	private final Path tempDir;
 	private final ExecutorService playThread = Executors.newFixedThreadPool(1);
 	private final String userDir = System.getProperty("user.dir");
-	private final Path ffmpegBin = Paths.get(userDir + "/lib/ffmpeg-natives/macos");
+	private final Path ffmpegBin = Paths.get(userDir + "/data/ffmpeg-natives");
 	private final ExecutorService frameSamplingDone = Executors.newFixedThreadPool(1);
 	private final File outputFileSixteenBit;
 	

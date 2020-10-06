@@ -115,7 +115,7 @@ public class FrameProcessor {
 			tiffUpdater.cancel();
 		}
 		scifio.getContext().dispose();
-		fileWritingExecutor.shutdown();
+		fileWritingExecutor.shutdownNow();
 	}
 	
 }

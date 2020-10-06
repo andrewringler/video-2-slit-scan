@@ -246,9 +246,9 @@ public class Video2SlitScan extends PApplet {
 		if (generatingSlitScanImage && ui.colorDepth().isEightBit() && timeOfLastVideoFrameRead > 0) {
 			if (millis() - timeOfLastVideoFrameRead > 5000) {
 				println("taking too long to read new frame, canceling video play");
-				generatingSlitScanImage = false;
 				doPause = true;
 				frameProcessorRealtime.done();
+				generatingSlitScanImageDoHandleCompletion.set(true);
 			}
 		}
 		
@@ -295,11 +295,7 @@ public class Video2SlitScan extends PApplet {
 			ui.updateProgress(frameProcessorRealtime.getProgress() * 100f);
 			ui.updatePlayhead(previewFrameTimecode);
 			if (frameProcessorRealtime.isDone()) {
-				generatingSlitScanImage = false;
-				ui.doneGeneratingSlitScan();
-				
-				/* pick a new file so we don't overwrite it */
-				setNewOutputFile();
+				generatingSlitScanImageDoHandleCompletion.set(true);
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
 			scrubbingHandler.handleScrub(video);
@@ -349,9 +345,6 @@ public class Video2SlitScan extends PApplet {
 		LOG.info("video-2-slit-scan quiting");
 		
 		generatingSlitScanImage = false;
-		if (video != null) {
-			video.stop();
-		}
 		video = null;
 		frameProcessorRealtime.cleanup();
 	}
