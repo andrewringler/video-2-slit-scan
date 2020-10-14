@@ -20,9 +20,9 @@ public interface VideoWrapper {
 	
 	float timeSeconds();
 	
-	int width();
+	int widthCoded();
 	
-	int height();
+	int heightCoded();
 	
 	int widthDisplay();
 	

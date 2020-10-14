@@ -50,7 +50,7 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 		@Override
 		public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
 			PImageFromIntBuffer sourceFrame = new PImageFromIntBuffer(videoDimensions.width, videoDimensions.height, nativeBuffers[0].asIntBuffer());
-			VideoMeta videoMeta = new VideoMeta(duration(), timeSeconds(), width(), height());
+			VideoMeta videoMeta = new VideoMeta(duration(), timeSeconds(), widthDisplay(), heightDisplay());
 			if (rotateVideo.hasRotation()) {
 				frameReady.processFrame(new Frame(new PImage(rotateImage((BufferedImage) sourceFrame.getNative(), rotateVideo.degrees())), null, videoMeta));
 			} else {
@@ -199,12 +199,12 @@ public class VideoWrapperVLCJ implements VideoWrapper {
 	}
 	
 	@Override
-	public int width() {
+	public int widthCoded() {
 		return rotateVideo.rotatedDimensions(videoDimensions).getWidth();
 	}
 	
 	@Override
-	public int height() {
+	public int heightCoded() {
 		return rotateVideo.rotatedDimensions(videoDimensions).getHeight();
 	}
 	

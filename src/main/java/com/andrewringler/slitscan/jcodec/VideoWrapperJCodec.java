@@ -68,7 +68,7 @@ public class VideoWrapperJCodec implements VideoWrapper {
 								//								LOG.debug("Frame meta: width=" + picture.getWidth() + " height=" + picture.getHeight() + " color=" + picture.getColor());
 								currentFrame.incrementAndGet();
 								BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
-								VideoMeta videoMeta = new VideoMeta(duration(), timeSeconds(), width(), height());
+								VideoMeta videoMeta = new VideoMeta(duration(), timeSeconds(), widthDisplay(), heightDisplay());
 								frameReady.processFrame(new Frame(new PImage(bufferedImage), picture, videoMeta));
 							}
 						} catch (IOException e) {
@@ -94,12 +94,12 @@ public class VideoWrapperJCodec implements VideoWrapper {
 	}
 	
 	@Override
-	public int width() {
+	public int widthCoded() {
 		return width;
 	}
 	
 	@Override
-	public int height() {
+	public int heightCoded() {
 		return height;
 	}
 	

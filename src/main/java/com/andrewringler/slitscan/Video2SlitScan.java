@@ -257,7 +257,7 @@ public class Video2SlitScan extends PApplet {
 		}
 		
 		if (previewFrame != null && video != null) {
-			ui.updateVideoDrawDimesions(previewFrame.width, previewFrame.height, video.width(), video.height());
+			ui.updateVideoDrawDimesions(previewFrame.width, previewFrame.height, video.widthDisplay(), video.heightDisplay());
 			
 			if (ui.previewModeFrame()) {
 				// fit video in our window
