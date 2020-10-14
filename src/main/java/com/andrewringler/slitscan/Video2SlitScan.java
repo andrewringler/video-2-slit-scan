@@ -44,7 +44,6 @@ public class Video2SlitScan extends PApplet {
 	int lastDrawUpdate = 0;
 	int timeOfLastVideoFrameRead = 0;
 	
-	final FrameProcessor frameProcessorRealtime;
 	ScrubbingHandler scrubbingHandler;
 	
 	// Slit generation
@@ -58,8 +57,6 @@ public class Video2SlitScan extends PApplet {
 	public Video2SlitScan() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
 		LOG.info("video-2-slit-scan launched");
-		
-		frameProcessorRealtime = new FrameProcessor();
 		
 		// Set App icons for Mac
 		// 16, 32, 48, 64, 128, 256, 512
@@ -134,10 +131,6 @@ public class Video2SlitScan extends PApplet {
 				LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "], " + frame.getColorDepth());
 				return;
 			}
-			
-			if (generatingSlitScanImage && ui.colorDepth().isEightBit()) {
-				frameProcessorRealtime.doProcessFrame(Video2SlitScan.this, frame, slitLocations);
-			}
 		}
 	}
 	
@@ -210,18 +203,26 @@ public class Video2SlitScan extends PApplet {
 					// generate 16-bit ffmpeg slit-scan
 					String outputFileString = outputFile.toString();
 					File outputFileSixteenBit = new File(outputFileString.substring(0, outputFileString.length() - 4) + "16bit.tif");
-					new GenerateSlitscanFFMPEG(this, videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
+					new GenerateSlitscanFFMPEG(this, ui.colorDepth(), videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
 						@Override
 						public void run() {
 							generatingSlitScanImageDoHandleCompletion.set(true);
 						}
 					});
 				} else {
-					frameProcessorRealtime.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
-					video.speed(ui.getPlaySpeed());
-					video.jump(0);
-					video.play();
-					previewFrameTimecode = 0;
+					//					frameProcessorRealtime.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
+					//					video.speed(ui.getPlaySpeed());
+					//					video.jump(0);
+					//					video.play();
+					//					previewFrameTimecode = 0;
+					
+					// generate 8-bit ffmpeg slit-scan
+					new GenerateSlitscanFFMPEG(this, ui.colorDepth(), videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFile, new Runnable() {
+						@Override
+						public void run() {
+							generatingSlitScanImageDoHandleCompletion.set(true);
+						}
+					});
 				}
 				
 			} else {
@@ -251,7 +252,6 @@ public class Video2SlitScan extends PApplet {
 			if (millis() - timeOfLastVideoFrameRead > 5000) {
 				println("taking too long to read new frame, canceling video play");
 				doPause = true;
-				frameProcessorRealtime.done();
 				generatingSlitScanImageDoHandleCompletion.set(true);
 			}
 		}
@@ -296,11 +296,11 @@ public class Video2SlitScan extends PApplet {
 		}
 		
 		if (generatingSlitScanImage && ui.colorDepth().isEightBit()) {
-			ui.updateProgress(frameProcessorRealtime.getProgress() * 100f);
-			ui.updatePlayhead(previewFrameTimecode);
-			if (frameProcessorRealtime.isDone()) {
-				generatingSlitScanImageDoHandleCompletion.set(true);
-			}
+			//			ui.updateProgress(frameProcessorRealtime.getProgress() * 100f);
+			//			ui.updatePlayhead(previewFrameTimecode);
+			//			if (frameProcessorRealtime.isDone()) {
+			//				generatingSlitScanImageDoHandleCompletion.set(true);
+			//			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
 			video.jump(ui.getVideoPlayhead());
 			ui.doneScrubbing();
@@ -354,7 +354,6 @@ public class Video2SlitScan extends PApplet {
 			video.dispose();
 		}
 		video = null;
-		frameProcessorRealtime.cleanup();
 	}
 	
 	public void dispose() {

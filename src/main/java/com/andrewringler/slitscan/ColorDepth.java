@@ -4,11 +4,11 @@ public enum ColorDepth {
 	EIGHT_BIT,
 	SIXTEEN_BIT;
 	
-	boolean isEightBit() {
+	public boolean isEightBit() {
 		return this.equals(EIGHT_BIT);
 	}
 	
-	boolean isSixteenBit() {
+	public boolean isSixteenBit() {
 		return this.equals(SIXTEEN_BIT);
 	}
 }

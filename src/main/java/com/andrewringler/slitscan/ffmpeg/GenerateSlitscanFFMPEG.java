@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.andrewringler.slitscan.ColorDepth;
 import com.andrewringler.slitscan.RotateVideo;
 import com.andrewringler.slitscan.SlitLocations;
 import com.andrewringler.slitscan.UserInterface;
@@ -34,24 +35,25 @@ public class GenerateSlitscanFFMPEG {
 	private final Path ffmpegBin;
 	private final ExecutorService frameSamplingDone = Executors.newFixedThreadPool(1);
 	private final File outputFileSixteenBit;
-	
 	private final Path outputPath;
 	private final AtomicLong frameCount = new AtomicLong(0l);
 	private final Runnable done;
+	private final ColorDepth colorDepth;
 	
 	private int slitWidth;
 	private int height;
 	private int stagingWidth;
 	
-	public GenerateSlitscanFFMPEG(Video2SlitScan p, String absolutePath, boolean startPlaying, RotateVideo rotateVideo, int width, int height, float durationInSeconds, int numberOfFrames, SlitLocations slitLocations, UserInterface ui, File outputFileSixteenBit, Runnable done) {
+	public GenerateSlitscanFFMPEG(Video2SlitScan p, ColorDepth colorDepth, String videoFileAbsolutePath, boolean startPlaying, RotateVideo rotateVideo, int width, int height, float durationInSeconds, int numberOfFrames, SlitLocations slitLocations, UserInterface ui, File slitscanOutputFile, Runnable done) {
+		this.colorDepth = colorDepth;
 		this.height = height;
-		this.outputFileSixteenBit = outputFileSixteenBit;
+		this.outputFileSixteenBit = slitscanOutputFile;
 		this.done = done;
 		
 		try {
 			ffmpegBin = Paths.get(p.dataPath("") + "/ffmpeg-natives");
 			tempDir = Files.createTempDirectory("ffmpeg");
-			Path videoPath = Paths.get(absolutePath);
+			Path videoPath = Paths.get(videoFileAbsolutePath);
 			outputPath = Paths.get(tempDir.toString(), "/frame_%09d.tiff");
 			
 			String rotationFilter = "";
@@ -76,11 +78,12 @@ public class GenerateSlitscanFFMPEG {
 			if (slitLocationX + stagingWidth > width) {
 				slitLocationX = width - stagingWidth;
 			}
+			String pixelFormat = colorDepth.isSixteenBit() ? "rgb48le" : "rgba";
 			
 			ffmpeg = FFmpeg.atPath(ffmpegBin) //
 					.addInput(UrlInput.fromPath(videoPath)) //
 					.addArguments("-vf", rotationFilter + "crop=" + stagingWidth + ":" + height + ":" + slitLocationX + ":0") //					
-					.addArguments("-pix_fmt", "rgb48le") //
+					.addArguments("-pix_fmt", pixelFormat) //
 					.addArguments("-vsync", "1") //
 					.setProgressListener(new ProgressListener() {
 						@Override
@@ -115,11 +118,13 @@ public class GenerateSlitscanFFMPEG {
 						}
 						
 						if (frameCount.get() > 1) {
+							String pixelFormat = colorDepth.isSixteenBit() ? "rgb48le" : "rgba";
+							
 							// https://superuser.com/questions/625189/combine-multiple-images-to-form-a-strip-of-images-ffmpeg
 							// ffmpeg -i %03d.png -filter_complex scale=120:-1,tile=5x1 output.png
 							FFmpeg finalSlitScanOutput = FFmpeg.atPath(ffmpegBin) //
 									.addInput(UrlInput.fromPath(outputPath)) //
-									.addArguments("-pix_fmt", "rgb48le") //
+									.addArguments("-pix_fmt", pixelFormat) //
 									.addArguments("-filter_complex", cropString + "tile=" + frameCount.get() + "x1") //
 									.addOutput(UrlOutput.toPath(Paths.get(outputFileSixteenBit.toString()))); //
 							
