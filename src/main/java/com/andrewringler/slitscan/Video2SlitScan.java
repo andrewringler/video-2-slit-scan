@@ -16,9 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
+import com.andrewringler.slitscan.ffmpeg.GenerateSlitscanFFMPEG;
 import com.andrewringler.slitscan.ffmpeg.VideoWrapperFFMPEG;
 import com.andrewringler.slitscan.jcodec.VideoWrapperJCodec;
-import com.andrewringler.slitscan.vlcj.VideoWrapperVLCJ;
 
 import processing.core.PApplet;
 import processing.core.PImage;
@@ -165,12 +165,16 @@ public class Video2SlitScan extends PApplet {
 			}
 			
 			loadingFirstFrame = true;
+			timeOfLastVideoFrameRead = 0;
+			lastDrawUpdate = 0;
+			doPause = false;
 			
 			LOG.info("starting initial video play");
 			if (useJCodec) {
 				video = new VideoWrapperJCodec(videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
 			} else {
-				video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
+				//				video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
+				video = new VideoWrapperFFMPEG(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
 			}
 		}
 	}
@@ -206,7 +210,7 @@ public class Video2SlitScan extends PApplet {
 					// generate 16-bit ffmpeg slit-scan
 					String outputFileString = outputFile.toString();
 					File outputFileSixteenBit = new File(outputFileString.substring(0, outputFileString.length() - 4) + "16bit.tif");
-					new VideoWrapperFFMPEG(this, videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
+					new GenerateSlitscanFFMPEG(this, videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
 						@Override
 						public void run() {
 							generatingSlitScanImageDoHandleCompletion.set(true);
@@ -298,7 +302,8 @@ public class Video2SlitScan extends PApplet {
 				generatingSlitScanImageDoHandleCompletion.set(true);
 			}
 		} else if (ui.scrubbing() && video != null && previewFrame != null) {
-			scrubbingHandler.handleScrub(video);
+			video.jump(ui.getVideoPlayhead());
+			ui.doneScrubbing();
 		}
 		
 		if (generatingSlitScanImageDoHandleCompletion.compareAndSet(true, false)) {
@@ -345,6 +350,9 @@ public class Video2SlitScan extends PApplet {
 		LOG.info("video-2-slit-scan quiting");
 		
 		generatingSlitScanImage = false;
+		if (video != null) {
+			video.dispose();
+		}
 		video = null;
 		frameProcessorRealtime.cleanup();
 	}
@@ -356,10 +364,22 @@ public class Video2SlitScan extends PApplet {
 	// need to override exit() method when using Processing from eclipse
 	// https://forum.processing.org/two/discussion/22292/solved-javaw-process-wont-close-after-the-exit-of-my-program-eclipse
 	public void exit() {
-		println("exit");
-		cleanup();
+		// try really hard to quit
+		//		new Thread(new Runnable() {
+		//			@Override
+		//			public void run() {
+		//				try {
+		//					Thread.sleep(5000);
+		//				} catch (InterruptedException e) {
+		//					System.exit(1);
+		//				}
+		//				System.exit(1);
+		//			}
+		//		}).start();
 		
+		println("exit");
 		noLoop();
+		cleanup();
 		
 		// Perform any code you like but some libraries like minim 
 		//need to be stopped manually. If so do that here.
