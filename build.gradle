@@ -48,7 +48,8 @@ dependencies {
             'uk.co.caprica:vlcj:4.4.4',
             ':jcodec-0.2.6-SNAPSHOT@jar',
             ':jcodec-javase-0.2.6-SNAPSHOT@jar',
-            'com.github.kokorin.jaffree:jaffree:0.9.3'
+            'com.github.kokorin.jaffree:jaffree:0.9.5',
+            'com.github.javadev:underscore:1.59'
             
     runtime "ch.qos.logback:logback-classic:1.0.9",
             "io.scif:scifio:0.32.0",
