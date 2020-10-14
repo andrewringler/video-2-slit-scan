@@ -9,11 +9,11 @@ import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.andrewringler.slitscan.Dimensions;
 import com.andrewringler.slitscan.FrameReady;
 import com.andrewringler.slitscan.RotateVideo;
 import com.andrewringler.slitscan.Video2SlitScan;
@@ -32,10 +32,8 @@ import com.github.underscore.Supplier;
 public class VideoWrapperFFMPEG implements VideoWrapper {
 	private final AtomicBoolean playing = new AtomicBoolean(false);
 	final float duration;
-	final int width;
-	final int height;
-	private final int codedWidth;
-	private final int codedHeight;
+	final Dimensions dimension;
+	final Dimensions codedDimension;
 	private final Integer numberOfFrames;
 	private final Rational avgFrameRate;
 	final FrameReady frameReady;
@@ -44,13 +42,16 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 	private final ExecutorService playThread = Executors.newFixedThreadPool(1);
 	private final AtomicReference<FFmpegResultFuture> resultFuture = new AtomicReference<FFmpegResultFuture>();
 	final AtomicLong seekLocationSeconds = new AtomicLong(0l);
+	private final RotateVideo rotateVideo;
 	
 	private final ConsumeAllFrames consumeAllFrames = new ConsumeAllFrames(this);
 	private final ConsumeOneFrame consumeOneFrame = new ConsumeOneFrame(this);
 	
 	public VideoWrapperFFMPEG(Video2SlitScan p, String absolutePath, FrameReady frameReady, boolean startPlaying, RotateVideo rotateVideo) {
 		this.frameReady = frameReady;
+		this.rotateVideo = rotateVideo;
 		ffmpegBin = Paths.get(p.dataPath("") + "/ffmpeg-natives");
+		
 		FFprobe ffprobe;
 		if (ffmpegBin != null) {
 			ffprobe = FFprobe.atPath(ffmpegBin);
@@ -58,23 +59,30 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 			ffprobe = FFprobe.atPath();
 		}
 		videoPath = Paths.get(absolutePath);
-		FFprobeResult result = ffprobe.setShowStreams(true).setInput(videoPath).execute();
+		
+		ffprobe = ffprobe //
+				.setShowStreams(true) //
+				.setSelectStreams(StreamType.VIDEO) //
+				.setInput(videoPath); //
+		FFprobeResult result = ffprobe.execute();
 		if (result.getStreams().size() > 0) {
 			Stream stream = result.getStreams().get(0);
-			duration = stream.getDuration(TimeUnit.SECONDS) == null ? (result.getFormat().getDuration() == null ? 0 : result.getFormat().getDuration()) : stream.getDuration(TimeUnit.SECONDS);
-			width = stream.getWidth() == null ? 0 : stream.getWidth();
-			height = stream.getHeight() == null ? 0 : stream.getHeight();
-			codedWidth = stream.getCodedWidth() == null ? 0 : stream.getCodedWidth();
-			codedHeight = stream.getCodedHeight() == null ? 0 : stream.getCodedHeight();
+			Float streamDurationSeconds = stream != null ? stream.getDuration() : null;
+			Float containerDurationSeconds = result.getFormat() != null ? result.getFormat().getDuration() : null;
+			duration = streamDurationSeconds != null ? streamDurationSeconds : containerDurationSeconds != null ? containerDurationSeconds : 0;
+			int width = stream.getWidth() == null ? 0 : stream.getWidth();
+			int height = stream.getHeight() == null ? 0 : stream.getHeight();
+			int codedWidth = stream.getCodedWidth() == null ? 0 : stream.getCodedWidth();
+			int codedHeight = stream.getCodedHeight() == null ? 0 : stream.getCodedHeight();
+			dimension = rotateVideo.rotatedDimensions(new Dimensions(width, height));
+			codedDimension = rotateVideo.rotatedDimensions(new Dimensions(codedWidth, codedHeight));
 			numberOfFrames = stream.getNbFrames();
 			avgFrameRate = stream.getAvgFrameRate();
 			play();
 		} else {
 			duration = 0;
-			width = 0;
-			height = 0;
-			codedHeight = 0;
-			codedWidth = 0;
+			dimension = new Dimensions(0, 0);
+			codedDimension = new Dimensions(0, 0);
 			numberOfFrames = null;
 			avgFrameRate = null;
 		}
@@ -94,8 +102,30 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 	@Override
 	public void play() {
 		if (playing.compareAndSet(false, true)) {
-			// TODO rotate
-			resultFuture.set(FFmpeg.atPath(ffmpegBin).addInput(UrlInput.fromPath(videoPath)).addOutput(FrameOutput.withConsumer(consumeAllFrames)).executeAsync());
+			String rotationFilter = "";
+			switch (rotateVideo) {
+				case NINETY_DEGREES:
+					rotationFilter = "transpose=1";
+					break;
+				case ONE_EIGHTY_DEGREES:
+					rotationFilter = "transpose=2,transpose=2";
+					break;
+				case TWO_SEVENTY_DEGREES:
+					rotationFilter = "transpose=2";
+					break;
+				default:
+					// nothing
+			}
+			
+			FFmpeg ffmpegConfig = FFmpeg //
+					.atPath(ffmpegBin) //
+					.addInput(UrlInput.fromPath(videoPath));
+			if (rotateVideo.hasRotation()) {
+				ffmpegConfig = ffmpegConfig.addArguments("-vf", rotationFilter);
+			}
+			ffmpegConfig = ffmpegConfig.addOutput(FrameOutput.withConsumer(consumeAllFrames));
+			resultFuture.set(ffmpegConfig.executeAsync());
+			
 			playThread.execute(new Runnable() {
 				@Override
 				public void run() {
@@ -134,7 +164,29 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 		@Override
 		public Void get() {
 			long seekSeconds = seekLocationSeconds.get();
-			FFmpegResultFuture oneFrameResult = FFmpeg.atPath(ffmpegBin).addInput(UrlInput.fromPath(videoPath).setPosition(seekSeconds, SECONDS)).addOutput(FrameOutput.withConsumer(consumeOneFrame).setFrameCount(StreamType.VIDEO, 1l)).executeAsync();
+			
+			String rotationFilter = "";
+			switch (rotateVideo) {
+				case NINETY_DEGREES:
+					rotationFilter = "transpose=1";
+					break;
+				case ONE_EIGHTY_DEGREES:
+					rotationFilter = "transpose=2,transpose=2";
+					break;
+				case TWO_SEVENTY_DEGREES:
+					rotationFilter = "transpose=2";
+					break;
+				default:
+					// nothing
+			}
+			
+			FFmpeg config = FFmpeg.atPath(ffmpegBin) //
+					.addInput(UrlInput.fromPath(videoPath).setPosition(seekSeconds, SECONDS));
+			if (rotateVideo.hasRotation()) {
+				config = config.addArguments("-vf", rotationFilter);
+			}
+			FFmpegResultFuture oneFrameResult = config.addOutput(FrameOutput.withConsumer(consumeOneFrame).setFrameCount(StreamType.VIDEO, 1l)) //
+					.executeAsync();
 			playThread.execute(new Runnable() {
 				@Override
 				public void run() {
@@ -190,22 +242,22 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 	}
 	
 	@Override
-	public int width() {
-		return codedWidth;
+	public int widthCoded() {
+		return codedDimension.width;
 	}
 	
 	@Override
-	public int height() {
-		return codedHeight;
+	public int heightCoded() {
+		return codedDimension.height;
 	}
 	
 	@Override
 	public int widthDisplay() {
-		return width;
+		return dimension.width;
 	}
 	
 	@Override
 	public int heightDisplay() {
-		return height;
+		return dimension.height;
 	}
 }

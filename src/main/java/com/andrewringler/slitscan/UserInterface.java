@@ -263,6 +263,12 @@ public class UserInterface {
 		outputFileLabel.setValue(outputFile);
 	}
 	
+	//	public void slitDimensionsUpdates(int slitWidth, int slitHeight) {
+	//		Integer frameCount = Integer.valueOf(videoFrameCountField.getText());
+	//		imageWidthField.setText(String.valueOf(frameCount * slitWidth));
+	//		imageHeightField.setText(String.valueOf(slitHeight));
+	//	}
+	
 	private void videoFrameCountUpdated() {
 		Integer frameCount = Integer.valueOf(videoFrameCountField.getText());
 		Integer startingPixel = Integer.valueOf(startPixelField.getText());
@@ -273,7 +279,7 @@ public class UserInterface {
 		}
 		imageWidthField.setText(String.valueOf(frameCount * slitWidth));
 		if (p.video != null) {
-			imageHeightField.setText(String.valueOf(p.video.height()));
+			imageHeightField.setText(String.valueOf(p.video.heightDisplay()));
 		}
 		
 		videoScrubber.setValue(0);
