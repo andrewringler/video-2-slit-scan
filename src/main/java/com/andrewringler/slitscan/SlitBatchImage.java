@@ -3,14 +3,11 @@ package com.andrewringler.slitscan;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.andrewringler.slitscan.jcodec.JCodecPictureRGB;
-
 import processing.core.PConstants;
 import processing.core.PImage;
 
 public class SlitBatchImage {
 	private final PImage batchedPImage;
-	private final JCodecPictureRGB batchedPicture;
 	private final ColorDepth colorDepth;
 	private final int width;
 	private final int height;
@@ -19,18 +16,11 @@ public class SlitBatchImage {
 		this.colorDepth = colorDepth;
 		this.width = width;
 		this.height = height;
-		
-		if (colorDepth.isSixteenBit()) {
-			this.batchedPImage = null;
-			this.batchedPicture = slitQueue.poll().getPicture();
-		} else {
-			this.batchedPicture = null;
-			this.batchedPImage = new PImage(width, height, PConstants.RGB);
-			int batchSize = slitQueue.size();
-			for (int i = 0; i < batchSize; i++) {
-				PImage slit = slitQueue.poll().getPImage();
-				batchedPImage.copy(slit, 0, 0, slit.width, slit.height, i * slitWidth, 0, slit.width, slit.height);
-			}
+		this.batchedPImage = new PImage(width, height, PConstants.RGB);
+		int batchSize = slitQueue.size();
+		for (int i = 0; i < batchSize; i++) {
+			PImage slit = slitQueue.poll().getPImage();
+			batchedPImage.copy(slit, 0, 0, slit.width, slit.height, i * slitWidth, 0, slit.width, slit.height);
 		}
 	}
 	
@@ -44,10 +34,6 @@ public class SlitBatchImage {
 	
 	public int getHeight() {
 		return height;
-	}
-	
-	public JCodecPictureRGB getPicture() {
-		return batchedPicture;
 	}
 	
 	public BufferedImage getBufferedImage() {

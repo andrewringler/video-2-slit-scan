@@ -1,9 +1,5 @@
 package com.andrewringler.slitscan;
 
-import static com.andrewringler.slitscan.vlcj.VLCJUtil.vlcInstallationFound;
-import static javax.swing.JOptionPane.ERROR_MESSAGE;
-import static javax.swing.JOptionPane.showMessageDialog;
-
 import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
@@ -18,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import com.andrewringler.slitscan.UserInterface.PreviewMode;
 import com.andrewringler.slitscan.ffmpeg.GenerateSlitscanFFMPEG;
 import com.andrewringler.slitscan.ffmpeg.VideoWrapperFFMPEG;
-import com.andrewringler.slitscan.jcodec.VideoWrapperJCodec;
 
 import processing.core.PApplet;
 import processing.core.PImage;
@@ -26,7 +21,6 @@ import processing.opengl.PGraphics2D;
 import processing.opengl.PJOGL;
 
 public class Video2SlitScan extends PApplet {
-	private static final boolean useJCodec = false;
 	private static final Logger LOG = LoggerFactory.getLogger(Video2SlitScan.class);
 	private static final String APP_NAME = "Video-2-Slit-Scan";
 	private static final String[] APP_ICON_FILENAMES = { "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png" };
@@ -128,7 +122,7 @@ public class Video2SlitScan extends PApplet {
 				loadingFirstFrame = false;
 				doPause = true;
 				ui.setVideoInfo(video.duration(), frame.width, frame.height, 60);
-				LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "], " + frame.getColorDepth());
+				LOG.info("video is " + video.duration() + " seconds [" + frame.width + "x" + frame.height + " @ ?fps], preview frame is [" + previewFrame.width + "x" + previewFrame.height + "]");
 				return;
 			}
 		}
@@ -163,12 +157,7 @@ public class Video2SlitScan extends PApplet {
 			doPause = false;
 			
 			LOG.info("starting initial video play");
-			if (useJCodec) {
-				video = new VideoWrapperJCodec(videoFileName.getAbsolutePath(), new FrameReadyProcess(), true);
-			} else {
-				//				video = new VideoWrapperVLCJ(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
-				video = new VideoWrapperFFMPEG(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
-			}
+			video = new VideoWrapperFFMPEG(this, videoFileName.getAbsolutePath(), new FrameReadyProcess(), true, ui.getRotateVideo());
 		}
 	}
 	
@@ -393,12 +382,12 @@ public class Video2SlitScan extends PApplet {
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", APP_NAME);
 		System.setProperty("apple.awt.application.name", APP_NAME);
 		
-		if (vlcInstallationFound()) {
-			// https://processing.org/tutorials/eclipse/
-			PApplet.main(new String[] { "--bgcolor=#000000", Video2SlitScan.class.getCanonicalName() });
-		} else {
-			LOG.error("Could not find any installation of VLC");
-			showMessageDialog(null, "Could not find any installation of VLC.\nPlease install the VLC Player (https://www.videolan.org/)\nin the default location, or set the\nenvironment variable VLC_PLUGIN_PATH to the location\nof your VLC installation.", "VLC Missing", ERROR_MESSAGE);
-		}
+		// https://processing.org/tutorials/eclipse/
+		PApplet.main(new String[] { "--bgcolor=#000000", Video2SlitScan.class.getCanonicalName() });
+		//		if (vlcInstallationFound()) {
+		//		} else {
+		//			LOG.error("Could not find any installation of VLC");
+		//			showMessageDialog(null, "Could not find any installation of VLC.\nPlease install the VLC Player (https://www.videolan.org/)\nin the default location, or set the\nenvironment variable VLC_PLUGIN_PATH to the location\nof your VLC installation.", "VLC Missing", ERROR_MESSAGE);
+		//		}
 	}
 }
