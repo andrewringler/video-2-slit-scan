@@ -31,7 +31,7 @@ class ConsumeOneFrame implements FrameConsumer {
 			frameCounter.set((long) (this.videoWrapperFFMPEG.seekLocationSeconds.get() * this.videoWrapperFFMPEG.frameRate()));
 			BufferedImage image = frame.getImage();
 			VideoMeta videoMeta = new VideoMeta(this.videoWrapperFFMPEG.duration, this.videoWrapperFFMPEG.timeSeconds(), this.videoWrapperFFMPEG.widthDisplay(), this.videoWrapperFFMPEG.heightDisplay());
-			this.videoWrapperFFMPEG.frameReady.processFrame(new com.andrewringler.slitscan.Frame(new PImage(image), null, videoMeta));
+			this.videoWrapperFFMPEG.frameReady.processFrame(new com.andrewringler.slitscan.Frame(new PImage(image), videoMeta));
 		}
 	}
 }

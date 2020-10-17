@@ -74,11 +74,7 @@ public class UpdateTiffOnDisk implements Runnable {
 				ImageWriteParam param = imageWriter.getDefaultWriteParam();
 				param.setDestinationOffset(new Point(outputXOffsetNext, 0));
 				//				System.out.println("writing: [" + slitsBatchImage.width + "x" + slitsBatchImage.height + "] to (" + outputXOffsetNext + ",0)");
-				if (slitsBatchImage.isSixteenBit()) {
-					imageWriter.replacePixels(slitsBatchImage.getPicture().toHiBDRaster(), param);
-				} else {
-					imageWriter.replacePixels((BufferedImage) slitsBatchImage.getBufferedImage(), param);
-				}
+				imageWriter.replacePixels((BufferedImage) slitsBatchImage.getBufferedImage(), param);
 				outputXOffsetNext += slitsBatchImage.getWidth();
 			}
 		} catch (IOException e) {
