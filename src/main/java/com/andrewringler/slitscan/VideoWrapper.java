@@ -28,4 +28,6 @@ public interface VideoWrapper {
 	
 	int heightDisplay();
 	
+	Integer exactFrameCount();
+	
 }

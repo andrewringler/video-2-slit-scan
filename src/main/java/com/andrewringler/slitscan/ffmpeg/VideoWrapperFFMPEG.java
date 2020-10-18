@@ -237,6 +237,11 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 		return min(timeSeconds, duration());
 	}
 	
+	@Override
+	public Integer exactFrameCount() {
+		return numberOfFrames;
+	}
+	
 	public float frameRate() {
 		return avgFrameRate == null ? 60 : avgFrameRate.floatValue();
 	}

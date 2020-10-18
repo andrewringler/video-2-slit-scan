@@ -38,8 +38,6 @@ public class Video2SlitScan extends PApplet {
 	int lastDrawUpdate = 0;
 	int timeOfLastVideoFrameRead = 0;
 	
-	ScrubbingHandler scrubbingHandler;
-	
 	// Slit generation
 	boolean generatingSlitScanImage = false;
 	boolean generatingSlicePause = false;
@@ -80,7 +78,6 @@ public class Video2SlitScan extends PApplet {
 		
 		ui = new UserInterface(this);
 		slitLocations = new SlitLocations(this, ui, 0.5f);
-		scrubbingHandler = new ScrubbingHandler(this, ui);
 		
 		setNewOutputFile();
 	}
@@ -163,7 +160,6 @@ public class Video2SlitScan extends PApplet {
 	
 	private void doProcessPreviewFrame(Frame frame) {
 		if (ui.scrubbing() || loadingFirstFrame || ((millis() - lastDrawUpdate) > 150)) {
-			//			float scalingFactor = video.width() > 640 ? (float) video.width() / 640f : 1f;
 			float scalingFactor = Math.min(width / (float) frame.width, height / (float) frame.height);
 			previewFrameTimecode = video.timeSeconds();
 			/* skip preview frame generation for performance */
@@ -192,21 +188,15 @@ public class Video2SlitScan extends PApplet {
 					// generate 16-bit ffmpeg slit-scan
 					String outputFileString = outputFile.toString();
 					File outputFileSixteenBit = new File(outputFileString.substring(0, outputFileString.length() - 4) + "16bit.tif");
-					new GenerateSlitscanFFMPEG(this, ui.colorDepth(), videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
+					new GenerateSlitscanFFMPEG(this, ui.colorDepth(), videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), slitLocations, ui, outputFileSixteenBit, new Runnable() {
 						@Override
 						public void run() {
 							generatingSlitScanImageDoHandleCompletion.set(true);
 						}
 					});
 				} else {
-					//					frameProcessorRealtime.reset(outputFile, ui.getSlitWidth(), ui.getImageWidth(), ui.getStartingPixel());
-					//					video.speed(ui.getPlaySpeed());
-					//					video.jump(0);
-					//					video.play();
-					//					previewFrameTimecode = 0;
-					
 					// generate 8-bit ffmpeg slit-scan
-					new GenerateSlitscanFFMPEG(this, ui.colorDepth(), videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), ui.getTotalVideoFrames(), slitLocations, ui, outputFile, new Runnable() {
+					new GenerateSlitscanFFMPEG(this, ui.colorDepth(), videoFileName.getAbsolutePath(), true, ui.getRotateVideo(), video.widthDisplay(), video.heightDisplay(), ui.getVideoDuration(), slitLocations, ui, outputFile, new Runnable() {
 						@Override
 						public void run() {
 							generatingSlitScanImageDoHandleCompletion.set(true);
