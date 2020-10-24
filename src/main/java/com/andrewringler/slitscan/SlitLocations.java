@@ -138,23 +138,21 @@ public class SlitLocations {
 		}
 		
 		// Draw slit location
-		if (ui.previewModeFrame()) {
-			p.noFill();
-			p.strokeWeight(1);
-			p.stroke(255);
-			Position slitDrawOffsets = p.previewFrameOffsets;
-			int scaledSlitLocation = slitDrawOffsets.x + round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
-			//			LOG.info("" + scaledSlitLocation + " " + positionInVideo + " " + ui.getVideoDrawWidth());
+		p.noFill();
+		p.strokeWeight(1);
+		p.stroke(255);
+		Position slitDrawOffsets = p.previewFrameOffsets;
+		int scaledSlitLocation = slitDrawOffsets.x + round(getSlitLocationNormalized(positionInVideo) * ui.getVideoDrawWidth());
+		//			LOG.info("" + scaledSlitLocation + " " + positionInVideo + " " + ui.getVideoDrawWidth());
+		patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
+		p.stroke(0);
+		patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
+		
+		if (draggingSlit) {
+			p.stroke(255, 255, 0);
 			patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
-			p.stroke(0);
+			p.stroke(0, 255, 0);
 			patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
-			
-			if (draggingSlit) {
-				p.stroke(255, 255, 0);
-				patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x0300, 1);
-				p.stroke(0, 255, 0);
-				patternLine(p, scaledSlitLocation, 0, scaledSlitLocation, p.height, 0x3000, 1);
-			}
 		}
 	}
 	
