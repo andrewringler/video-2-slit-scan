@@ -112,7 +112,7 @@ public class UserInterface {
 		});
 		outputFileLabel = cp5.addTextfield("outputFileLabel").setLabel("Output File Path").setPosition(10, 70).setSize(350, 20).setColorForeground(COLOR_READONLY).setColorBackground(COLOR_READONLY).setAutoClear(false).setGroup(slitGenerationUI).setUserInteraction(false);
 		
-		startPixelField = cp5.addTextfield("startFrameField").setLabel("Start Pixel").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setPosition(10, 120).setSize(60, 20).setGroup(slitGenerationUI);
+		startPixelField = cp5.addTextfield("startFrameField").setLabel("Start Frame").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setPosition(10, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		startPixelField.onChange(new CallbackListener() {
 			@Override
 			public void controlEvent(CallbackEvent theEvent) {
