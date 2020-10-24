@@ -162,7 +162,7 @@ public class UserInterface {
 		imageHeightField = cp5.addTextfield("imageHeightField").setLabel("Height").setText("0").setInputFilter(ControlP5.INTEGER).setAutoClear(false).setUserInteraction(false).setPosition(240, 120).setSize(60, 20).setGroup(slitGenerationUI);
 		
 		cp5.addTextlabel("slitSelectionModeLabel").setText("Slit Location").setPosition(6, 200).align(ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE, ControlP5.LEFT_OUTSIDE, ControlP5.BASELINE).setSize(30, 20).setGroup(slitGenerationUI);
-		slitSelectionMode = cp5.addRadioButton("slitSelectionMode").setPosition(10, 215).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Fixed", 1).addItem("Keyframes (8-bit mode only)", 2).setGroup(slitGenerationUI);
+		slitSelectionMode = cp5.addRadioButton("slitSelectionMode").setPosition(10, 215).setNoneSelectedAllowed(true).setItemsPerRow(2).setSpacingColumn(50).addItem("Fixed", 1).addItem("Keyframes (NOT-SUPPORTED)", 2).setGroup(slitGenerationUI);
 		slitSelectionMode.activate(0);
 		
 		cp5.addLabel("a: add keyframe, d: delete keyframe").setPosition(6, 230).setGroup(slitGenerationUI);
