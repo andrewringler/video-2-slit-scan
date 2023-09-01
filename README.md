@@ -7,30 +7,30 @@ Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provid
 ## Quickstart
 ### Install
 #### macOS
-   * Download [Video-2-Slit-Scan for Mac v0.2.3](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.3/video-2-slit-scan-0.2.3.dmg) (107 mb)
+   * Download [Video-2-Slit-Scan for Mac v0.2.6 Silicon](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/Video-2-Slit-Scan_0.2.6_Silicon.dmg) or [Video-2-Slit-Scan for Mac v0.2.6 Intel](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/Video-2-Slit-Scan_0.2.6_Intel.dmg)
    * Double-click the downloaded file and drag the `Video-2-Slit-Scan` icon to the Applications folder link
 
-*Tested on macOS Sierra 10.12.6. DMG comes bundled with Java 1.8.0_91.*
+*Intel version tested on macOS Sierra 10.12.6. Silicon version tests on macOS 12.6.3 on an Apple M1*
 
 #### Windows
-   * Install [Java 8 JRE](https://www.java.com/en/download/manual.jsp) or later. Be sure to install the 64-bit version if you have 64-bit Windows.
-   * Download the [Video-2-Slit-Scan for Windows v0.2.3](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.3/video-2-slit-scan-0.2.3-windows.zip) (49.6 mb)
+   * Download [Video-2-Slit-Scan for Windows v0.2.6](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/video-2-slit-scan_0.2.6_Windows_x64.exe)
 
-#### Linux
-*Video-2-Slit-Scan is written in [Processing](https://processing.org/) / [Java](https://java.com) / [Gradle](https://gradle.org/) / [Eclipse](https://www.eclipse.org/) so it should be able to run on Linux, but I have not yet been able to verify it working do to issues with the [Processing Video library](https://github.com/processing/processing-video/issues/86) on arm64.*
+#### Linux x64
+    * Download [Video-2-Slit-Scan for Linux v0.2.6](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/video-2-slit-scan-0.2.6_Linux_amd64.zip)
+    * Unzip file, cd into video-2-slit-scan subfolder, then from terminal run:
+    
+    ./video-2-slit-scan
 
-See [all Releases and Release Notes](https://github.com/andrewringler/video-2-slit-scan/releases).
+*Tested on Ubuntu 22.0.4.3 amd64*
 
-Unzip 
-tested on Ubuntu 22.04.3 amd64
-cd video-2-slit-scan-0.2.5_Linux-Linux/video-2-slit-scan
-./video-2-slit-scan
-
+#### Note on Keyframes
+The latest release no longer has keyframing capabilities, please download release [v0.2.4](https://github.com/andrewringler/video-2-slit-scan/releases/tag/v0.2.4) or earlier if you need this feature.
 
 ## Usage
  * Launch the App
  * Click `Open Video File`, choose a video
- * Click `Generate Slit-Scan Image`, a slit-scan image with default settings will saved to your Desktop
+ * Output file should get auto-populated, but if not, click `Set Output File` to choose a save location
+ * Click `Generate Slit-Scan Image`, a slit-scan image with default settings will saved to your Desktop (or output file location)
 
 ## Screenshots
 ![app screenshot](documentation/ScreenShot2017-12-30Glacier.jpg)
@@ -38,26 +38,27 @@ cd video-2-slit-scan-0.2.5_Linux-Linux/video-2-slit-scan
 ![app screenshot](documentation/ScreenShot2017-06-21.jpg)
 
 ## Features
- * Given an input video, create a single output TIF grabbing a single vertical slice from each frame
+ * Given an input video, create a single output TIF (or PNG) grabbing a single vertical slice from each frame
  * Adjust position and size of slit
- * Manually adjust slit position as video plays
- * Create moving slits over time by specifying slit position at keyframes and interpolating between keyframes over time
- * **Performance**. *Video-2-Slit-Scan* Should support very large input videos and very large output images. Videos are streamed in as needed, output images are not stored entirely in memory, but instead written to disk in small chunks. *NOTE, that this allow allows previewing the output image using your OS image viewer during generation.*
+ * Manually adjust slit position as video plays (versions 0.2.4 and earlier only)
+ * Create moving slits over time by specifying slit position at keyframes and interpolating between keyframes over time (version 0.2.4 and earlier only)
+ * **Performance**. *Video-2-Slit-Scan* Should support very large input videos and very large output images. Videos are streamed in as needed, output images are not stored entirely in memory, but instead written to disk in small chunks (so you doo need sufficient disk space available). *NOTE, that this allow previewing the output image in real-time using your OS image viewer during generation.*
 
 ## Background
-[Slit-scan photography](https://en.wikipedia.org/wiki/Slit-scan_photography), imaging and cinematography have a long history in film and digitally. This app allows you to experiment with one slit-scan technique digitally (converting a video to a single image). This app was originally commissioned by [Jan Kubasiewicz](http://jankuba.com/) who has created many beautiful works exploring various slit-scan techniques.
+[Slit-scan photography](https://en.wikipedia.org/wiki/Slit-scan_photography), imaging and cinematography have a long history in film and digitally. This app allows you to experiment with one particular slit-scan technique: digitally converting a video to a single ultra wide image. This app was originally commissioned by [Jan Kubasiewicz](http://jankuba.com/) who has created many beautiful works exploring various slit-scan techniques.
 
 See also [Strip photography](https://en.wikipedia.org/wiki/Strip_photography) for a more technical discussion on various techniques and history. Also known as streak images, streak photography, slit camera and slit scan camera.
 
 ## Developer Notes
 ### New Developer Setup
+ * Install Java JDK 17+
  * Install Eclipse 2023-06 (or later)
  * run after-pull.sh
  * Import Project Into Eclipse
  * Create a new run configuration with Video2SlitScan set at the main class
  
 ### Build Installers:
-Set JAVA_HOME environment variable to a Java 17+ installation (so Gradle can run)
+Set JAVA_HOME environment variable to a Java JDK 17+ installation (so Gradle can run). All installers will be generated in the `build` directory. NOTE: the macOS installers open and edit GUI windows during the build so do not use your mouse or keyboard during the building process.
 
 On Mac Silicon (M1/M2) run:
 
@@ -114,4 +115,3 @@ To get additional logging, control-click on application icon, click `Show Packag
  * Create PNG images (see [windows docs](https://msdn.microsoft.com/en-us/library/windows/desktop/dn742485%28v=vs.85%29.aspx) for latest sizes), currently 16,32,48,256
  * Convert to .ico using ImageMagick `convert icon-16.png icon-32.png icon-48.png icon-256.png icon.ico`
  * Copy .ico file to doc/ directory
-  
