@@ -1,44 +1,95 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'io.github.fvarrui:javapackager:1.7.2'
+    }
+}
+
 plugins {
   id 'java'
-  id "edu.sc.seis.macAppBundle" version "2.2.1"
-  id "edu.sc.seis.launch4j" version "2.4.3"
+//   id "edu.sc.seis.macAppBundle" version "2.2.1"
+//   id "edu.sc.seis.launch4j" version "2.4.3"
   id 'application'
+}
+
+// https://stackoverflow.com/questions/11235614/how-to-detect-the-current-os-from-gradle
+// https://github.com/gradle/gradle/issues/7735
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+def hostOs = DefaultNativePlatform.currentOperatingSystem.getName()
+def hostArch = DefaultNativePlatform.currentArchitecture.getName()
+if (DefaultNativePlatform.currentOperatingSystem.isMacOsX()) {
+    hostOs = "macos"
+}
+if (DefaultNativePlatform.currentOperatingSystem.isLinux()) {
+    hostOs = "linux"
+}
+if (DefaultNativePlatform.currentOperatingSystem.isWindows()) {
+    hostOs = "windows"
 }
 
 apply plugin: 'eclipse'
 apply plugin: 'application'
-apply plugin: 'edu.sc.seis.launch4j'
+// apply plugin: 'edu.sc.seis.launch4j'
+apply plugin: 'io.github.fvarrui.javapackager.plugin'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-applicationDefaultJvmArgs = ["-Xmx2048M"]
-mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+sourceCompatibility = '17'
+targetCompatibility = '17'
+
+application {
+    applicationDefaultJvmArgs = [
+        "-Xmx2048M",
+        "-Djava.library.path=${projectDir}/lib/p4/${hostOs}-${hostArch}"
+    ]
+    mainClass = "com.andrewringler.slitscan.Video2SlitScan"
+}
+
+// add links to natives in Eclipse build path
+// https://discuss.gradle.org/t/is-it-possible-to-set-eclipses-java-library-path-from-build-gradle/6511/4
+eclipse.classpath.file.whenMerged { classpath ->
+    //remove the dlls as direct dependencies
+    // classpath.entries.removeAll { entry -> entry.kind == ‘lib’ && entry.path.contains(‘dll’) }
+    //but add them as native libraries
+    def gluegen = classpath.entries.findResult { entry ->
+        if (entry.kind == 'lib' && entry.path.contains('gluegen-rt')) {
+            return entry
+        }
+    }
+    gluegen.setNativeLibraryLocation("${projectDir}/lib/p4/${hostOs}-${hostArch}")
+}
 
 group = 'com.andrewringler.slitscan'
-version = '0.2.5'
+version = '0.2.6'
 
 repositories {
     flatDir {
-        dirs 'lib', 'lib/p3', 'lib/controlP5', 'lib/ffmpeg-natives'
-    }
- 	maven {
-        url "http://dev.loci.wisc.edu/maven2/releases/"
+        dirs 'lib', 'lib/p4', 'lib/controlP5', 'lib/ffmpeg-natives'
     }
  	mavenCentral()
- 	jcenter()
+ 	// jcenter()
+ 	// maven {
+    //     url "https://dev.loci.wisc.edu/maven2/releases/"
+    // }
  	maven {
         url "https://maven.scijava.org/content/repositories/releases/"
     }
  	maven {
-        url "http://maven.imagej.net/content/repositories/releases/"
+        url "https://maven.imagej.net/content/repositories/releases/"
     }
- 	maven {
-        url "http://repo.boundlessgeo.com/main/"
+    maven {
+        url "https://repo.osgeo.org/repository/release/"
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
 dependencies {
-    compile ":core:@jar",
+    implementation ":core:@jar",
             ":gluegen-rt:@jar",
             ":jogl-all@jar",
             ":controlP5:@jar",
@@ -48,69 +99,142 @@ dependencies {
             'com.github.kokorin.jaffree:jaffree:0.9.5',
             'com.github.javadev:underscore:1.59'
             
-    runtime "ch.qos.logback:logback-classic:1.0.9",
+    runtimeOnly "ch.qos.logback:logback-classic:1.0.9",
             "io.scif:scifio:0.32.0",
-            fileTree(dir: 'lib/p3', include: '**/*.jar')
+            fileTree(dir: 'lib/p4', include: '**/*.jar')
 }
 
 
-//
-// Mac
-//
-// gradle createDmg
-//
-macAppBundle {
-    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
-    appName = "Video-2-Slit-Scan"
-    bundleExecutable = "Video-2-Slit-Scan"
-    icon = "doc/icon.icns"
-    bundleJRE = true
-    jreHome = System.getenv('JAVA_HOME')
-    javaProperties.put("apple.laf.useScreenMenuBar", "false")
-    backgroundImage = "doc/macbackground.png"
-    backgroundImageWidth = 527
-    backgroundImageHeight = 429
+task createDmgArm(type: io.github.fvarrui.javapackager.gradle.PackageTask, dependsOn: build) {
+    mainClass = 'com.andrewringler.slitscan.Video2SlitScan'
+    displayName = 'Video-2-Slit-Scan'
+    version = "${project.version}_Silicon"
+    bundleJre = true
+    jdkPath = new File("${projectDir}/jdk/jdk-17.0.8_macos-aarch64.jdk/Contents/Home")
+    packagingJdk = new File("${projectDir}/jdk/jdk-17.0.8_macos-aarch64.jdk/Contents/Home")
+    generateInstaller = true
+    administratorRequired = false
+    platform = "mac"
+    arch = "aarch64"
+    additionalResources = [ file('data'), file('lib/ffmpeg/ffmpeg-macos'), file('lib/p4/macos-aarch64'), file('doc/icon.icns')]
+    vmArgs = [
+        "-Dapple.laf.useScreenMenuBar=false",
+        "-Djava.library.path=macos-aarch64"
+    ]
+    macConfig {
+        macStartup = "ARM64"
+        appName = "Video-2-Slit-Scan"
+        volumeName = "Video-2-Slit-Scan"
+        icnsFile = new File('doc/icon.icns')
+        backgroundImage = new File("doc/macbackground.png")
+        iconSize = 96
+        windowWidth = 540
+        windowHeight = 429
+        iconY = 226
+        appsLinkIconY = 226
+    }
 }
-task copyDataDirMac(type: Copy) {
-	outputs.upToDateWhen { false }
-	
-	from 'data'
-	into "${project.buildDir}/${macAppBundle.appOutputDir}/${macAppBundle.appName}.app/Contents/Java/data"
-}
-createApp.finalizedBy copyDataDirMac
 
+task createDmgIntel(type: io.github.fvarrui.javapackager.gradle.PackageTask, dependsOn: build) {
+    mainClass = 'com.andrewringler.slitscan.Video2SlitScan'
+    displayName = 'Video-2-Slit-Scan'
+    version = "${project.version}_Intel"
+    bundleJre = true
+    jdkPath = new File("${projectDir}/jdk/jdk-17.0.8_macos-x64.jdk/Contents/Home")
+    packagingJdk = new File("${projectDir}/jdk/jdk-17.0.8_macos-x64.jdk/Contents/Home")
+    generateInstaller = true
+    administratorRequired = false
+    platform = "mac"
+    arch = "x64"
+    additionalResources = [ file('data'), file('lib/ffmpeg/ffmpeg-macos'), file('lib/p4/macos-x86_64'), file('doc/icon.icns')]
+    vmArgs = [
+        "-Dapple.laf.useScreenMenuBar=false",
+        "-Djava.library.path=macos-x86_64"
+    ]
+    macConfig {
+        macStartup = "X86_64"
+        appName = "Video-2-Slit-Scan"
+        volumeName = "Video-2-Slit-Scan"
+        icnsFile = new File('doc/icon.icns')
+        backgroundImage = new File("doc/macbackground.png")
+        iconSize = 96
+        windowWidth = 540
+        windowHeight = 429
+        iconY = 226
+        appsLinkIconY = 226
+    }
+}
+
+task createWindowsInstaller64(type: io.github.fvarrui.javapackager.gradle.PackageTask, dependsOn: build) {
+    mainClass = 'com.andrewringler.slitscan.Video2SlitScan'
+    displayName = 'Video-2-Slit-Scan'
+    version = "${project.version}_Windows_x64"
+    bundleJre = true
+    jdkPath = new File("${projectDir}/jdk/jdk-17.0.8_windows-x64.jdk")
+    packagingJdk = new File("${projectDir}/jdk/jdk-17.0.8_windows-x64.jdk")
+    generateInstaller = true
+    administratorRequired = false
+    platform = "windows"
+    arch = "x64"
+    additionalResources = [ file('data'), file('lib/ffmpeg/ffmpeg-windows'), file('lib/p4/windows-amd64'), file('doc/icon.ico')]
+    vmArgs = [
+        "-Djava.library.path=windows-amd64"
+    ]
+    winConfig {
+        generateSetup = true
+        generateMsi = false
+        generateMsm = false
+        icoFile = new File('${projectDir}/doc/icon.ico')
+    }
+}
+
+task createZipLinuxAmd64(type: io.github.fvarrui.javapackager.gradle.PackageTask, dependsOn: build) {
+    mainClass = 'com.andrewringler.slitscan.Video2SlitScan'
+    displayName = 'Video-2-Slit-Scan'
+    version = "${project.version}_Linux"
+    createZipball = true
+    bundleJre = true
+    jdkPath = new File("${projectDir}/jdk/jdk-17.0.8_linux-x64.jdk")
+    packagingJdk = new File("${projectDir}/jdk/jdk-17.0.8_linux-x64.jdk")
+    platform = "linux"
+    arch = "x64"
+    additionalResources = [ file('data'), file('lib/ffmpeg/ffmpeg-linux-amd64'), file('lib/p4/linux-amd64'), file('doc/icon.icns')]
+    vmArgs = [
+        "-Djava.library.path=linux-amd64"
+    ]
+}
 
 //
 // Windows
 //
 // gradle createExe
 //
-launch4j {
-    mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
-    icon = "${projectDir}/doc/icon.ico"
-    windowTitle = "Video-2-Slit-Scan"
-}
-task copySlitScanNativesWindows(type: Copy) {
-	outputs.upToDateWhen { false }
+// launch4j {
+//     mainClassName = "com.andrewringler.slitscan.Video2SlitScan"
+//     icon = "${projectDir}/doc/icon.ico"
+//     windowTitle = "Video-2-Slit-Scan"
+// }
+// task copySlitScanNativesWindows(type: Copy) {
+// 	outputs.upToDateWhen { false }
 	
-	from 'lib/p3-video'
-	into "${-> project.buildDir}/${-> launch4j.outputDir}/${-> launch4j.libraryDir}"
-}
-task copyDataDirWindows(type: Copy) {
-	outputs.upToDateWhen { false }
+// 	from 'lib/p4-video'
+// 	into "${-> project.buildDir}/${-> launch4j.outputDir}/${-> launch4j.libraryDir}"
+// }
+// task copyDataDirWindows(type: Copy) {
+// 	outputs.upToDateWhen { false }
 	
-	from 'data'
-	into "${-> project.buildDir}/${-> launch4j.outputDir}/data"
-}
-task zipUpWindows(type: Zip) {
-	outputs.upToDateWhen { false }
+// 	from 'data'
+// 	into "${-> project.buildDir}/${-> launch4j.outputDir}/data"
+// }
+// task zipUpWindows(type: Zip) {
+// 	outputs.upToDateWhen { false }
 
-	from "${-> project.buildDir}/${-> launch4j.outputDir}"
-   	archiveName "${-> project.name}-${-> project.version}-windows.zip" 
-}
-zipUpWindows.dependsOn copySlitScanNativesWindows
-zipUpWindows.dependsOn copyDataDirWindows
-createExe.finalizedBy zipUpWindows
+// 	from "${-> project.buildDir}/${-> launch4j.outputDir}"
+//    	archiveFileName = "${-> project.name}-${-> project.version}-windows.zip" 
+// }
+// // zipUpWindows.dependsOn copySlitScanNativesWindows
+// zipUpWindows.dependsOn copyDataDirWindows
+// createExe.finalizedBy zipUpWindows
 
 
 //
@@ -123,15 +247,15 @@ createExe.finalizedBy zipUpWindows
 // but currently this is the only version we release for Linux
 // Mac and Win have their nicer custom versions with icons and packages
 //
-distributions {
-    main {
-        contents {
-            from('data') {
-                into 'data'
-            }
-        }
-    }
-}
-tasks.withType(Tar){
-    compression = Compression.GZIP
-}
+// distributions {
+//     main {
+//         contents {
+//             from('data') {
+//                 into 'data'
+//             }
+//         }
+//     }
+// }
+// tasks.withType(Tar){
+//     compression = Compression.GZIP
+// }

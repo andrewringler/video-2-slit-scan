@@ -26,7 +26,7 @@ public class GenerateSlitscanFFMPEG {
 	private final ExecutorService ffmpegThread = Executors.newFixedThreadPool(1);
 	
 	public GenerateSlitscanFFMPEG(Video2SlitScan p, ColorDepth colorDepth, String videoFileAbsolutePath, boolean startPlaying, RotateVideo rotateVideo, int width, int height, float durationInSeconds, SlitLocations slitLocations, UserInterface ui, File slitscanOutputFile, Runnable done) {
-		Path ffmpegBin = Paths.get(p.dataPath("") + "/ffmpeg-natives");
+		Path ffmpegBin = FFMPEGBinary.ffmpegBin(p);
 		Path videoPath = Paths.get(videoFileAbsolutePath);
 		AtomicLong frameCount = new AtomicLong(0);
 		
@@ -81,8 +81,8 @@ public class GenerateSlitscanFFMPEG {
 							.addInput(UrlInput.fromPath(videoPath)) //
 							.addArguments("-filter_complex", //
 									rotationFilter + //
-					"crop=" + slitWidth + ":" + height + ":" + slitLocationX + ":0:exact=1," + //
-					"tile=" + (int) frameCount.get() + "x1") //					
+											"crop=" + slitWidth + ":" + height + ":" + slitLocationX + ":0:exact=1," + //
+											"tile=" + (int) frameCount.get() + "x1") //					
 							.addArguments("-pix_fmt", pixelFormat) //
 							.addOutput(UrlOutput.toPath(Paths.get(slitscanOutputFile.toString()))) //
 							.execute(); //

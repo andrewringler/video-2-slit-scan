@@ -8,8 +8,9 @@
 .project
 build/
 generated/
-data/
 bin/
 saved/
 *.tif
 *.tiff
+jdk
+local

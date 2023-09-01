@@ -3,10 +3,13 @@ package com.andrewringler.slitscan;
 import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +25,7 @@ import processing.opengl.PJOGL;
 public class Video2SlitScan extends PApplet {
 	private static final Logger LOG = LoggerFactory.getLogger(Video2SlitScan.class);
 	private static final String APP_NAME = "Video-2-Slit-Scan";
-	private static final String[] APP_ICON_FILENAMES = { "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png" };
+	private String[] APP_ICON_FILENAMES;
 	
 	VideoWrapper video;
 	File videoFileName = null;
@@ -48,11 +51,6 @@ public class Video2SlitScan extends PApplet {
 	public Video2SlitScan() {
 		// DO NOT PUT ANY PROCESSING CODE HERE!!
 		LOG.info("video-2-slit-scan launched");
-		
-		// Set App icons for Mac
-		// 16, 32, 48, 64, 128, 256, 512
-		// PSurfaceJOGL.java loads these in order
-		PJOGL.setIcon(APP_ICON_FILENAMES);
 	}
 	
 	public void settings() {
@@ -60,13 +58,26 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	public void setup() {
+		APP_ICON_FILENAMES = Arrays.asList("icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png").stream().map(file -> {
+			return dataPath(file);
+		}).collect(Collectors.toList()).toArray(new String[] {});
+		
+		// Set App icons for Mac
+		// 16, 32, 48, 64, 128, 256, 512
+		// PSurfaceJOGL.java loads these in order
+		PJOGL.setIcon(APP_ICON_FILENAMES);
+		
 		// Add Windows Icons
 		// task-switcher, titlebar
 		List<Image> appIconImages = new ArrayList<Image>();
 		for (String appIconFilename : APP_ICON_FILENAMES) {
 			appIconImages.add(new ImageIcon(loadBytes(appIconFilename)).getImage());
 		}
-		frame.setIconImages(appIconImages);
+		
+		Object frame = getSurface().getNative();
+		if (frame instanceof JFrame) {
+			((JFrame) frame).setIconImages(appIconImages);
+		}
 		
 		// TODO still need to deal with moving scrubber
 		// if we want to allow resizing window
@@ -281,11 +292,15 @@ public class Video2SlitScan extends PApplet {
 	}
 	
 	private void setNewOutputFile() {
-		// on a Mac?
 		String home = System.getProperty("user.home");
-		if (new File(home + "/Desktop").exists()) {
+		File desktop = new File(home + "/Desktop");
+		if (!desktop.exists()) {
+			desktop = new File(home + "/OneDrive/Desktop");
+		}
+		
+		if (desktop.exists()) {
 			String extension = ui.outputImageFormat().tiff() ? "tif" : "png";
-			outputFile = new File(home + "/Desktop/" + year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan." + extension);
+			outputFile = new File(desktop.getPath() + "/" + year() + "-" + month() + "-" + day() + "_" + hour() + "-" + minute() + "-" + second() + "-slit-scan." + extension);
 			ui.outputFileSelected(outputFile.getAbsolutePath());
 		}
 	}

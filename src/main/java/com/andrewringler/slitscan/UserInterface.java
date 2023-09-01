@@ -61,7 +61,7 @@ public class UserInterface {
 		cp5 = new ControlP5(p);
 		int COLOR_READONLY = p.color(80, 80, 80);
 		
-		robotoMono = p.createFont("RobotoMono-Medium", 10, true);
+		robotoMono = p.createFont(p.dataFile("RobotoMono-Medium.ttf").getPath(), 10, true);
 		ControlFont font = new ControlFont(robotoMono, 10);
 		cp5.setFont(font);
 		

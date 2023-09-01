@@ -1,5 +1,5 @@
 # Video-2-Slit-Scan
-Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provides a graphical interface for adjusting slit position and size. Video-2-Slit-Scan can support very large videos with modest RAM since it streams in the input video and writes out the output image to disk in chunks. Released for Windows and macOS (Mac/Apple/OS-X) as free software under the [MIT license](https://opensource.org/licenses/MIT).
+Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provides a graphical interface for adjusting slit position and size. Video-2-Slit-Scan can support very large videos with modest RAM since it streams in the input video and writes out the output image to disk in chunks. Released for Windows and macOS (Mac/Apple/OS-X) as free software under the [MIT license](https://opensource.org/licenses/MIT) and makes use of FFmpeg binaries licensed under the GPU v3 see [LICENSE](LICENSE.txt).
 
 ![Slit-scan generated from Wellspring Fords video](documentation/2017-wellspring-fords.jpg)
 *slit-scan generated from [Wellspring Fords video](https://andrewringler.com/2017-11-wellspring-fords/), 2017*
@@ -20,6 +20,12 @@ Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provid
 *Video-2-Slit-Scan is written in [Processing](https://processing.org/) / [Java](https://java.com) / [Gradle](https://gradle.org/) / [Eclipse](https://www.eclipse.org/) so it should be able to run on Linux, but I have not yet been able to verify it working do to issues with the [Processing Video library](https://github.com/processing/processing-video/issues/86) on arm64.*
 
 See [all Releases and Release Notes](https://github.com/andrewringler/video-2-slit-scan/releases).
+
+Unzip 
+tested on Ubuntu 22.04.3 amd64
+cd video-2-slit-scan-0.2.5_Linux-Linux/video-2-slit-scan
+./video-2-slit-scan
+
 
 ## Usage
  * Launch the App
@@ -45,21 +51,50 @@ See also [Strip photography](https://en.wikipedia.org/wiki/Strip_photography) fo
 
 ## Developer Notes
 ### New Developer Setup
- * Install Eclipse Neon (or later)
+ * Install Eclipse 2023-06 (or later)
  * run after-pull.sh
  * Import Project Into Eclipse
+ * Create a new run configuration with Video2SlitScan set at the main class
  
 ### Build Installers:
-Set JAVA_HOME environment variable to a Java 1.8 installation, then run:
+Set JAVA_HOME environment variable to a Java 17+ installation (so Gradle can run)
 
-    ./gradlew createDmg    
-    ./gradlew createExe
-    ./gradlew distTar
+On Mac Silicon (M1/M2) run:
+
+    ./gradlew createDmgArm    
+        
+On Mac x64 (or Silicon with Rosetta) run:
     
-#### Debug Windows build.
-To get additional JVM logging, launch Video-2-Slit-Scan from the Command Prompt with l4j flag. This will generate an extra launch4j log file with uncaught Runtime Exceptions.
+    ./gradlew createDmgIntel    
+    
+On Windows:
+	- Install https://jrsoftware.org/isinfo.php
+	- add `C:\Program Files (x86)\Inno Setup 6` to your PATH environment variable
+     
+    ./gradlew createWindowsInstaller64
+    
+On Linux x64 run:
 
-    video-2-slit-scan.exe --l4j-debug-all
+    ./gradlew createZipLinuxAmd64
+    
+NOTE: first download JDKs for the platform you are building on:
+
+    unzip to: jdk/jdk-17.0.8_macos-aarch64.jdk/Contents/Home
+    https://download.oracle.com/java/17/archive/jdk-17.0.8_linux-x64_bin.tar.gz
+
+    unzip to: jdk/jdk-17.0.8_macos-x64/Contents/Home
+    https://download.oracle.com/java/17/archive/jdk-17.0.8_macos-x64_bin.tar.gz
+
+    unzip to: jdk/jdk-17.0.8_windows-x64.jdk
+    https://download.oracle.com/java/17/archive/jdk-17.0.8_windows-x64_bin.zip
+
+    unzip to: jdk/jdk-17.0.8_linux-x64.jdk
+    https://download.oracle.com/java/17/archive/jdk-17.0.8_linux-x64_bin.tar.gz
+
+#### Debug Windows build.
+To get additional JVM logging, launch Video-2-Slit-Scan from the Command Prompt:
+
+    video-2-slit-scan.exe
     
 #### Debug Mac build.
 To get additional logging, control-click on application icon, click `Show Package Contents`, browse to Contents > MacOS and double-click `JavaAppLauncher`. Logging will show up in the `Terminal` window.

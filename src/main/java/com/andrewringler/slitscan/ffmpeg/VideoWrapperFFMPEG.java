@@ -50,7 +50,7 @@ public class VideoWrapperFFMPEG implements VideoWrapper {
 	public VideoWrapperFFMPEG(Video2SlitScan p, String absolutePath, FrameReady frameReady, boolean startPlaying, RotateVideo rotateVideo) {
 		this.frameReady = frameReady;
 		this.rotateVideo = rotateVideo;
-		ffmpegBin = Paths.get(p.dataPath("") + "/ffmpeg-natives");
+		ffmpegBin = FFMPEGBinary.ffmpegBin(p);
 		
 		FFprobe ffprobe;
 		if (ffmpegBin != null) {
