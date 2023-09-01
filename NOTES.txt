@@ -7,3 +7,9 @@ https://gstreamer.freedesktop.org/features/
 http://bytedeco.org/
 https://github.com/kokorin/Jaffree
 http://fmj-sf.net/ffmpeg-java/getting_started.php
+
+Todo:
+
+Application icon is not working on Windows installer
+Application windows and fonts are really tiny on Windows (Scale 150%, Resolution 3840x2160) and probably other platforms
+Update About Dialog
