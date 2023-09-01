@@ -16,9 +16,9 @@ Video-2-Slit-Scan allows you to create a slit-scan image from a video. It provid
    * Download [Video-2-Slit-Scan for Windows v0.2.6](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/video-2-slit-scan_0.2.6_Windows_x64.exe)
 
 #### Linux x64
-    * Download [Video-2-Slit-Scan for Linux v0.2.6](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/video-2-slit-scan-0.2.6_Linux_amd64.zip)
-    * Unzip file, cd into video-2-slit-scan subfolder, then from terminal run:
-    
+ * Download [Video-2-Slit-Scan for Linux v0.2.6](https://github.com/andrewringler/video-2-slit-scan/releases/download/v0.2.6/video-2-slit-scan-0.2.6_Linux_amd64.zip)
+ * Unzip file, cd into video-2-slit-scan subfolder, then from terminal run:
+
     ./video-2-slit-scan
 
 *Tested on Ubuntu 22.0.4.3 amd64*
